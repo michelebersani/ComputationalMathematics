@@ -2,8 +2,6 @@ import numpy as np
 import simple_f
 import matplotlib.pyplot as plt
 
-#ciao
-
 def BFGS (f, x, delta = 1, eps = 1e-6, max_feval = 1000, m1 = 0.01, m2 = 0.9, tau = 0.9, sfgrd = 0.01, m_inf = - np.Inf, mina = 1e-16):
     
     # setup plotting
