@@ -78,8 +78,8 @@ def BFGS (f, x, delta = 1, eps = 1e-6, max_feval = 1000, m1 = 0.01, m2 = 0.9, ta
         # update approximation of the Hessian - - - - - - - - - - - - - - - - -
         # warning: magic at work! Broyden-Fletcher-Goldfarb-Shanno formula
 
-        s = last_x - x   # s^i = x^{i + 1} - x^i
-        y = last_g - g   # y^i = \nabla f( x^{i + 1} ) - \nabla f( x^i )
+        s = np.subtract(last_x, x)   # s^i = x^{i + 1} - x^i
+        y = np.subtract(last_g, g)   # y^i = \nabla f( x^{i + 1} ) - \nabla f( x^i )
   
         rho = np.dot(y, s)
         if rho < 1e-16:
@@ -97,7 +97,6 @@ def BFGS (f, x, delta = 1, eps = 1e-6, max_feval = 1000, m1 = 0.01, m2 = 0.9, ta
         if n == 2 and Plotf:
             ax.scatter(last_x[0],last_x[1],color = 'r', marker = '.')
             ax.quiver(x[0], x[1], last_x[0]-x[0], last_x[1]-x[1], scale_units = 'xy', angles = 'xy', scale = 1, color = 'r', alpha = .3)
-            input()
     
         # update and iterate - - - - - - - - - - - - - - - - - - - - - - - - - - -
         
@@ -105,6 +104,9 @@ def BFGS (f, x, delta = 1, eps = 1e-6, max_feval = 1000, m1 = 0.01, m2 = 0.9, ta
         g = last_g
         ng = np.linalg.norm( g )
 
+    print("\n\nSTATUS:\t", status)
+    print("\n Last x was:\t", last_x)
+    print("\n Last gradient was:\t", last_g)
     plt.show()
 
 def f2phi (f, alpha, x, d, feval):
