@@ -28,7 +28,7 @@ def LBFGS (f, x, M = 20, delta = 1, eps = 1e-10, max_feval = 1000, m1 = 0.0001, 
     saved_rho = deque([])
 
     feval = 1
-    print('\nfeval\t\tx\tf(x)\t\t|| g(x) ||\tls\talpha*\t rho\n')
+    print('\nfeval\t\tx\tf(x)\t\t|| g(x) ||\tls\talpha*\t y*s\n')
     
     v = ackley.function(x)
     g = ackley.gradient(x)
@@ -56,40 +56,23 @@ def LBFGS (f, x, M = 20, delta = 1, eps = 1e-10, max_feval = 1000, m1 = 0.0001, 
         if feval > max_feval:
             status = 'stopped for reached max_feval'
             break
-
-        #black magic by Nocedal (1980) - - - - - - - - - - - - - - - - - - - - -
-
+        
+        # determine new descent direction - - - - - - - - - - - - - - - - - - -
         if iteration > M:
             bound = M
         else:
             bound = iteration
 
-        saved_alpha = deque([])
-        q = g
-
-        for i in range (bound-1, -1, -1):
-            new_alpha = saved_rho[i] * np.dot( saved_s[i], q)
-            q -= new_alpha * saved_y[i]
-            saved_alpha.appendleft(new_alpha)
-
-        if iteration > 0:
-            k = np.dot(saved_s[-1], saved_y[-1]) / np.dot(saved_y[-1], saved_y[-1])
-        else:
-            k = 1
-
-        new_d = k * h_0 * q
-
-        for i in range (bound):
-            beta = saved_rho[i] * np.dot(saved_y[i], new_d)
-            new_d += (saved_alpha[i] - beta) * saved_s[i]
-
-        d = - new_d
+        d = - NocedalDirection(g, bound, saved_rho, saved_s, saved_y, h_0, iteration)
 
         # compute step size - - - - - - - - - - - - - - - - - - - - - - - - - -
         # as in Newton's method, the default initial stepsize is 1
 
         phip0 = np.dot(g,d)
-
+        if phip0 > 0:
+            print(f"\n\nphip0 = {phip0}")
+            status = 'phip > 0'
+            break
         alpha, v, feval, new_x, new_g = ArmijoWolfeLS( f, x, d, feval, v, phip0 , 1 , m1 , m2 , tau, sfgrd, max_feval, mina)
     
         # output statistics - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -98,37 +81,32 @@ def LBFGS (f, x, M = 20, delta = 1, eps = 1e-10, max_feval = 1000, m1 = 0.0001, 
         if alpha <= mina:
            status = 'alpha <= mina ----> A-W not satisfied by any point far enough from x'
            break
-    
         if v <= m_inf:
             status = 'unbounded'
             break
         
+        # - - plot new point - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if n == 2 and Plotf:
+            ax.scatter(new_x[0],new_x[1],color = 'r', marker = '.')
+            ax.quiver(x[0], x[1], new_x[0]-x[0], new_x[1]-x[1], scale_units = 'xy', angles = 'xy', scale = 1, color = 'r', alpha = .3)
+
         # - - compute and store s,y and rho - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        
         s = np.subtract(new_x, x)   # s^i = x^{i + 1} - x^i
         y = np.subtract(new_g, g)   # y^i = \nabla f( x^{i + 1} ) - \nabla f( x^i )
         rho = np.dot(y, s)
-
         if rho < 1e-16:
             print( '\n\nError: y^i s^i = {:6.4f}'.format(rho))
             status = 'Rho < threshold'
             break
+        print( "\t{:2.2E}".format(rho) )
         rho = 1 / rho
-        print( "\t{:3.2f}".format(rho) )
-        
         saved_s.append(s)
         saved_y.append(y)
         saved_rho.append(rho)
-
         if iteration > M:
             saved_s.popleft()
             saved_y.popleft()
             saved_rho.popleft()
-
-        # - - possibly plot the trajectory - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        if n == 2 and Plotf:
-            ax.scatter(new_x[0],new_x[1],color = 'r', marker = '.')
-            ax.quiver(x[0], x[1], new_x[0]-x[0], new_x[1]-x[1], scale_units = 'xy', angles = 'xy', scale = 1, color = 'r', alpha = .3)
     
         # - - update and iterate - - - - - - - - - - - - - - - - - - - - - - - - - - -
         x = new_x
@@ -136,10 +114,30 @@ def LBFGS (f, x, M = 20, delta = 1, eps = 1e-10, max_feval = 1000, m1 = 0.0001, 
         ng = np.linalg.norm( g )
         iteration += 1
 
-    print("\n\nSTATUS:\t", status)
-    print("\n Last x was:\t", new_x)
-    print("\n Last gradient was:\t", new_g)
+    print("\n\nEXITED WITH STATUS:\t", status)
+    print(f"Last x was: {new_x} \t Last gradient was: {new_g}")
     plt.show()
+
+def NocedalDirection(q, bound, saved_rho, saved_s, saved_y, h_0, iteration):
+
+    saved_alpha = deque([])
+
+    for i in range (bound-1, -1, -1):
+        new_alpha = saved_rho[i] * np.dot( saved_s[i], q)
+        q -= new_alpha * saved_y[i]
+        saved_alpha.append(new_alpha)
+
+    if iteration > 0:
+        k = np.dot(saved_s[-1], saved_y[-1]) / np.dot(saved_y[-1], saved_y[-1])
+    else:
+        k = 1
+
+    new_d = k * h_0 * q
+
+    for i in range (bound):
+        beta = saved_rho[i] * np.dot(saved_y[i], new_d)
+        new_d += (saved_alpha.pop() - beta) * saved_s[i]
+    return new_d
 
 def f2phi (f, alpha, x, d, feval):
 
@@ -153,55 +151,36 @@ def f2phi (f, alpha, x, d, feval):
    feval = feval + 1
    return phi, phip, new_x, new_g, feval
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-def ArmijoWolfeLS(f, x, d, feval, phi0 , phip0 , alpha_sup , m1 , m2 , tau, sfgrd, max_feval, mina):
+def ArmijoWolfeLS(f, x, d, feval, phi0 , phip0 , alpha_0 , m1 , m2 , tau, sfgrd, max_feval, mina):
 
     lsiter = 1  # count iterations of first phase
+    alpha_sup = alpha_0
 
     while feval <= max_feval:
-        phia, phips, new_x, new_g, feval = f2phi(f, alpha_sup, x, d, feval)
-        if ( phia <= phi0 + m1 * alpha_sup * phip0 ) and ( abs( phips ) <= - m2 * phip0 ):
+        phia, phip_sup, new_x, new_g, feval = f2phi(f, alpha_sup, x, d, feval)
+        if ( phia <= phi0 + m1 * alpha_sup * phip0 ) and ( abs( phip_sup ) <= - m2 * phip0 ):
             print( '\t(A)' , lsiter , end='')
             alpha = alpha_sup
             return alpha, phia, feval, new_x, new_g  # Armijo + strong Wolfe satisfied, we are done
-        if phips >= 0:  # derivative is positive, break
+        if phip_sup >= 0:  # derivative is positive, break
             break
         alpha_sup = alpha_sup / tau
         lsiter += 1
 
     lsiter = 1  # count iterations of second phase
 
-    alpha_inf = 0
-    alpha = alpha_sup
-    phipm = phip0
-
-    while ( feval <= max_feval ) and ( ( alpha_sup - alpha_inf ) ) > mina and ( phips > 1e-12 ):
-
-        # compute the new value by safeguarded quadratic interpolation
-        alpha = ( alpha_inf * phips - alpha_sup * phipm ) / ( phips - phipm )
-        alpha = max( alpha_inf + ( alpha_sup - alpha_inf ) * sfgrd, min( alpha_sup - ( alpha_sup - alpha_inf ) * sfgrd, alpha ) )
-
-        # compute phi( alpha )
-        phia, phip, new_x, new_g, feval = f2phi(f, alpha, x, d, feval)
-
-        if ( phia <= phi0 + m1 * alpha * phip0 ) and ( abs( phip ) <= - m2 * phip0 ):
-            break  # Armijo + strong Wolfe satisfied, we are done
-        
-        # restrict the interval based on sign of the derivative in x + alpha * d
-        if phip < 0:
-            alpha_inf = alpha
-            phipm = phip
-        else:
-            alpha_sup = alpha
-            if alpha_sup <= mina:
-                break
-            phips = phip
-        lsiter = lsiter + 1
-        
-    print('\t(B)' , lsiter, end='' )
-
-    return alpha, phia, feval, new_x, new_g
+    alpha_sup = alpha_0
+    
+    while feval <= max_feval:
+        phia, phip_sup, new_x, new_g, feval = f2phi(f, alpha_sup, x, d, feval)
+        if ( phia <= phi0 + m1 * alpha_sup * phip0 ) and ( abs( phip_sup ) <= - m2 * phip0 ):
+            print( '\t(A)' , lsiter , end='')
+            alpha = alpha_sup
+            return alpha, phia, feval, new_x, new_g  # Armijo + strong Wolfe satisfied, we are done
+        alpha_sup = alpha_sup * tau
+        lsiter += 1
+    
+    print("WE STILL HAVE TO HANDLE NO POINT SATISFYING A-W")
 
 def check_input(f, x, delta, eps, max_feval, m1, m2, tau, sfgrd, m_inf, mina):
 
@@ -248,4 +227,4 @@ def check_input(f, x, delta, eps, max_feval, m1, m2, tau, sfgrd, m_inf, mina):
     return True
 
 if __name__ == "__main__":
-    LBFGS(ackley,[0.3,0])
+    LBFGS(ackley,[4,3])
