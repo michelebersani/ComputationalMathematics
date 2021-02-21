@@ -3,42 +3,105 @@ import ackley
 import matplotlib.pyplot as plt
 from collections import deque
 
-def LBFGS (f, x, M = 20, delta = 1, eps = 1e-10, max_feval = 1000, m1 = 0.0001, m2 = 0.9, tau = 0.9, sfgrd = 0.01, m_inf = - np.Inf, mina = 1e-16):
+
+class NocedalAlgorithm:
+    def __init__(self, M: int, B_0):
+        # memory
+        self.M = M
+        # initial approximation of B (diagonal)
+        self.B_0 = B_0
+        self.saved_s = deque([])
+        self.saved_y = deque([])
+        self.saved_rho = deque([])
+
+    def inverse_H_product(self, q: np.ndarray) -> np.ndarray:
+        """Returns the product `B*q`, where `B` is the
+        current approximation of the inverse of the Hessian.
+
+        Args:
+            q (numpy.ndarray): input vector
+        """
+        current_memory = len(self.saved_rho)
+        if current_memory == 0:
+            return self.B_0 * q
+
+        saved_alpha = deque([])
+
+        for i in reversed(range(current_memory)):
+            new_alpha = self.saved_rho[i] * np.dot(self.saved_s[i], q)
+            saved_alpha.append(new_alpha)
+            q -= new_alpha * self.saved_y[i]
+
+        k = np.dot(self.saved_s[-1], self.saved_y[-1])
+        k = k / np.dot(self.saved_y[-1], self.saved_y[-1])
+
+        new_d = k * self.B_0 * q
+
+        for i in range(current_memory):
+            beta = self.saved_rho[i] * np.dot(self.saved_y[i], new_d)
+            new_d += (saved_alpha.pop() - beta) * self.saved_s[i]
+        return new_d
     
+    def save(self, new_s, new_y, new_rho):
+        self.saved_s.append(new_s)
+        self.saved_y.append(new_y)
+        self.saved_rho.append(new_rho)
+
+        current_memory = len(self.saved_rho)
+        if current_memory > self.M:
+            self.saved_s.popleft()
+            self.saved_y.popleft()
+            self.saved_rho.popleft()
+
+
+def LBFGS(
+    f,
+    x,
+    M=20,
+    delta=1,
+    eps=1e-10,
+    max_feval=1000,
+    m1=0.0001,
+    m2=0.9,
+    tau=0.9,
+    sfgrd=0.01,
+    m_inf=-np.Inf,
+    mina=1e-16,
+):
+
     # setup plotting
     Plotf = True  # if f and the trajectory have to be plotted when n = 2
     fig, ax = plt.subplots()
-    ax.scatter(x[0],x[1],color = 'r', marker = '.')
+    ax.scatter(x[0], x[1], color="r", marker=".")
     ackley.plot_general(fig)
 
-    # reading and checking input - - - - - - - - - - - - - - - - - - - - -
+    #  reading and checking input - - - - - - - - - - - - - - - - - - - - -
     if not check_input(f, x, delta, eps, max_feval, m1, m2, tau, sfgrd, m_inf, mina):
-        return 
+        return
 
     n = len(x)
 
     print("\nL-BFGS method starts")
 
     # initializations - - - - - - - - - - - - - - - - - - - - - - - -
-    
+
     new_x = np.zeros(n)  # last point visited in the line search
-    new_g = np.zeros(n) # gradient of new_x
-    saved_s = deque([])
-    saved_y = deque([])
-    saved_rho = deque([])
+    new_g = np.zeros(n)  # gradient of new_x
 
     feval = 1
-    print('\nfeval\t\tx\tf(x)\t\t|| g(x) ||\tls\talpha*\t y*s\n')
-    
+    print("\nfeval\t\tx\tf(x)\t\t|| g(x) ||\tls\talpha*\t y*s\n")
+
     v = ackley.function(x)
     g = ackley.gradient(x)
     ng = np.linalg.norm(g)
-    ng0 = 1     # un-scaled stopping criterion
+    ng0 = 1  # un-scaled stopping criterion
     if eps < 0:
-        ng0 = - ng  # norm of first subgradient: why is there a "-"? -)
-    
-    h_0 = np.repeat(delta, n)
-    d = - h_0 * g
+        ng0 = -ng  # norm of first subgradient: why is there a "-"? -)
+
+    B_0 = np.repeat(delta, n)
+    d = -B_0 * g
+
+    nocedal = NocedalAlgorithm(M, B_0)
 
     # main loop - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -47,121 +110,115 @@ def LBFGS (f, x, M = 20, delta = 1, eps = 1e-10, max_feval = 1000, m1 = 0.0001, 
     while True:
 
         # output stats
-        print(f"{feval}\t{x[0]:4.2f} ; {x[1]:4.2f}\t{v:6.4f}\t\t{ng:6.6f}", end='')
+        print(f"{feval}\t{x[0]:4.2f} ; {x[1]:4.2f}\t{v:6.4f}\t\t{ng:6.6f}", end="")
 
-        #stopping criteria - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # stopping criteria - - - - - - - - - - - - - - - - - - - - - - - - - -
         if ng <= eps * ng0:
-            status = 'optimal'
+            status = "optimal"
             break
         if feval > max_feval:
-            status = 'stopped for reached max_feval'
+            status = "stopped for reached max_feval"
             break
-        
-        # determine new descent direction - - - - - - - - - - - - - - - - - - -
-        if iteration > M:
-            bound = M
-        else:
-            bound = iteration
 
-        d = - NocedalDirection(g, bound, saved_rho, saved_s, saved_y, h_0, iteration)
+        # determine new descent direction - - - - - - - - - - - - - - - - - - -
+
+        d = -nocedal.inverse_H_product(g)
+        # d = -NocedalDirection(g, bound, saved_rho, saved_s, saved_y, B_0, iteration)
 
         # compute step size - - - - - - - - - - - - - - - - - - - - - - - - - -
         # as in Newton's method, the default initial stepsize is 1
 
-        phip0 = np.dot(g,d)
+        phip0 = np.dot(g, d)
         if phip0 > 0:
             print(f"\n\nphip0 = {phip0}")
-            status = 'phip > 0'
+            status = "phip > 0"
             break
-        alpha, v, feval, new_x, new_g = ArmijoWolfeLS( f, x, d, feval, v, phip0 , 1 , m1 , m2 , tau, sfgrd, max_feval, mina)
-    
+        alpha, v, feval, new_x, new_g = ArmijoWolfeLS(
+            f, x, d, feval, v, phip0, 1, m1, m2, tau, sfgrd, max_feval, mina
+        )
+
         # output statistics - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-        print( '\t{:6.4f}'.format(alpha), end='')
+        print("\t{:6.4f}".format(alpha), end="")
         if alpha <= mina:
-           status = 'alpha <= mina ----> A-W not satisfied by any point far enough from x'
-           break
-        if v <= m_inf:
-            status = 'unbounded'
+            status = (
+                "alpha <= mina ----> A-W not satisfied by any point far enough from x"
+            )
             break
-        
+        if v <= m_inf:
+            status = "unbounded"
+            break
+
         # - - plot new point - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         if n == 2 and Plotf:
-            ax.scatter(new_x[0],new_x[1],color = 'r', marker = '.')
-            ax.quiver(x[0], x[1], new_x[0]-x[0], new_x[1]-x[1], scale_units = 'xy', angles = 'xy', scale = 1, color = 'r', alpha = .3)
+            ax.scatter(new_x[0], new_x[1], color="r", marker=".")
+            ax.quiver(
+                x[0],
+                x[1],
+                new_x[0] - x[0],
+                new_x[1] - x[1],
+                scale_units="xy",
+                angles="xy",
+                scale=1,
+                color="r",
+                alpha=0.3,
+            )
 
         # - - compute and store s,y and rho - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        s = np.subtract(new_x, x)   # s^i = x^{i + 1} - x^i
-        y = np.subtract(new_g, g)   # y^i = \nabla f( x^{i + 1} ) - \nabla f( x^i )
-        rho = np.dot(y, s)
-        if rho < 1e-16:
-            print( '\n\nError: y^i s^i = {:6.4f}'.format(rho))
-            status = 'Rho < threshold'
+        s = np.subtract(new_x, x)  # s^i = x^{i + 1} - x^i
+        y = np.subtract(new_g, g)  # y^i = \nabla f( x^{i + 1} ) - \nabla f( x^i )
+        inv_rho = np.dot(y, s)
+        if inv_rho < 1e-16:
+            print("\n\nError: y^i s^i = {:6.4f}".format(inv_rho))
+            status = "Rho < threshold"
             break
-        print( "\t{:2.2E}".format(rho) )
-        rho = 1 / rho
-        saved_s.append(s)
-        saved_y.append(y)
-        saved_rho.append(rho)
-        if iteration > M:
-            saved_s.popleft()
-            saved_y.popleft()
-            saved_rho.popleft()
-    
+        print("\t{:2.2E}".format(inv_rho))
+        rho = 1 / inv_rho
+        nocedal.save(s,y,rho)
+
         # - - update and iterate - - - - - - - - - - - - - - - - - - - - - - - - - - -
         x = new_x
         g = new_g
-        ng = np.linalg.norm( g )
+        ng = np.linalg.norm(g)
         iteration += 1
 
     print("\n\nEXITED WITH STATUS:\t", status)
     print(f"Last x was: {new_x} \t Last gradient was: {new_g}")
     plt.show()
 
-def NocedalDirection(q, bound, saved_rho, saved_s, saved_y, h_0, iteration):
 
-    saved_alpha = deque([])
-
-    for i in range (bound-1, -1, -1):
-        new_alpha = saved_rho[i] * np.dot( saved_s[i], q)
-        q -= new_alpha * saved_y[i]
-        saved_alpha.append(new_alpha)
-
-    if iteration > 0:
-        k = np.dot(saved_s[-1], saved_y[-1]) / np.dot(saved_y[-1], saved_y[-1])
-    else:
-        k = 1
-
-    new_d = k * h_0 * q
-
-    for i in range (bound):
-        beta = saved_rho[i] * np.dot(saved_y[i], new_d)
-        new_d += (saved_alpha.pop() - beta) * saved_s[i]
-    return new_d
-
-def f2phi (f, alpha, x, d, feval):
+def f2phi(f, alpha, x, d, feval):
 
     # phi( alpha ) = f( x + alpha * d )
     # phi'( alpha ) = < \nabla f( x + alpha * d ) , d >
 
-   new_x = x + alpha * d
-   phi = f.function( new_x )
-   new_g = f.gradient( new_x )
-   phip = np.dot(d, new_g)
-   feval = feval + 1
-   return phi, phip, new_x, new_g, feval
+    new_x = x + alpha * d
+    phi = f.function(new_x)
+    new_g = f.gradient(new_x)
+    phip = np.dot(d, new_g)
+    feval = feval + 1
+    return phi, phip, new_x, new_g, feval
 
-def ArmijoWolfeLS(f, x, d, feval, phi0 , phip0 , alpha_0 , m1 , m2 , tau, sfgrd, max_feval, mina):
+
+def ArmijoWolfeLS(
+    f, x, d, feval, phi0, phip0, alpha_0, m1, m2, tau, sfgrd, max_feval, mina
+):
 
     lsiter = 1  # count iterations of first phase
     alpha_sup = alpha_0
 
     while feval <= max_feval:
         phia, phip_sup, new_x, new_g, feval = f2phi(f, alpha_sup, x, d, feval)
-        if ( phia <= phi0 + m1 * alpha_sup * phip0 ) and ( abs( phip_sup ) <= - m2 * phip0 ):
-            print( '\t(A)' , lsiter , end='')
+        if (phia <= phi0 + m1 * alpha_sup * phip0) and (abs(phip_sup) <= -m2 * phip0):
+            print("\t(A)", lsiter, end="")
             alpha = alpha_sup
-            return alpha, phia, feval, new_x, new_g  # Armijo + strong Wolfe satisfied, we are done
+            return (
+                alpha,
+                phia,
+                feval,
+                new_x,
+                new_g,
+            )  # Armijo + strong Wolfe satisfied, we are done
         if phip_sup >= 0:  # derivative is positive, break
             break
         alpha_sup = alpha_sup / tau
@@ -170,17 +227,24 @@ def ArmijoWolfeLS(f, x, d, feval, phi0 , phip0 , alpha_0 , m1 , m2 , tau, sfgrd,
     lsiter = 1  # count iterations of second phase
 
     alpha_sup = alpha_0
-    
+
     while feval <= max_feval:
         phia, phip_sup, new_x, new_g, feval = f2phi(f, alpha_sup, x, d, feval)
-        if ( phia <= phi0 + m1 * alpha_sup * phip0 ) and ( abs( phip_sup ) <= - m2 * phip0 ):
-            print( '\t(A)' , lsiter , end='')
+        if (phia <= phi0 + m1 * alpha_sup * phip0) and (abs(phip_sup) <= -m2 * phip0):
+            print("\t(A)", lsiter, end="")
             alpha = alpha_sup
-            return alpha, phia, feval, new_x, new_g  # Armijo + strong Wolfe satisfied, we are done
+            return (
+                alpha,
+                phia,
+                feval,
+                new_x,
+                new_g,
+            )  # Armijo + strong Wolfe satisfied, we are done
         alpha_sup = alpha_sup * tau
         lsiter += 1
-    
+
     print("WE STILL HAVE TO HANDLE NO POINT SATISFYING A-W")
+
 
 def check_input(f, x, delta, eps, max_feval, m1, m2, tau, sfgrd, m_inf, mina):
 
@@ -197,7 +261,7 @@ def check_input(f, x, delta, eps, max_feval, m1, m2, tau, sfgrd, m_inf, mina):
         m2 = np.float(m2)
         tau = np.float(tau)
         sfgrd = np.float(sfgrd)
-        if m_inf != - np.Inf:
+        if m_inf != -np.Inf:
             m_inf = np.float(m_inf)
         mina = np.float(mina)
     except:
@@ -226,5 +290,6 @@ def check_input(f, x, delta, eps, max_feval, m1, m2, tau, sfgrd, m_inf, mina):
 
     return True
 
+
 if __name__ == "__main__":
-    LBFGS(ackley,[4,3])
+    LBFGS(ackley, [2, 0])
