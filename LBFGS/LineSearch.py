@@ -54,4 +54,4 @@ def ArmijoWolfeLS(
             break
         lsiter += 1
 
-    print("WE STILL HAVE TO HANDLE NO POINT SATISFYING A-W")
+    raise Exception("ArmijoWolfeLS could not find a point.")
