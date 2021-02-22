@@ -31,7 +31,7 @@ class NocedalAlgorithm:
         for i in reversed(range(current_memory)):
             new_alpha = self.saved_rho[i] * np.dot(self.saved_s[i], q)
             saved_alpha.append(new_alpha)
-            q -= new_alpha * self.saved_y[i]
+            q = q - new_alpha * self.saved_y[i]
 
         k = np.dot(self.saved_s[-1], self.saved_y[-1])
         k = k / np.dot(self.saved_y[-1], self.saved_y[-1])
@@ -125,7 +125,6 @@ def LBFGS(
     iteration = 0
 
     while True:
-
         # output stats
         print(f"{feval}\t{x[0]:4.2f} ; {x[1]:4.2f}\t{v:6.4f}\t\t{ng:6.6f}", end="")
 
@@ -138,13 +137,12 @@ def LBFGS(
             break
 
         # determine new descent direction - - - - - - - - - - - - - - - - - - -
-
         d = -nocedal.inverse_H_product(g)
-
         # compute step size - - - - - - - - - - - - - - - - - - - - - - - - - -
         # as in Newton's method, the default initial stepsize is 1
 
         phip0 = np.dot(g, d)
+        print('')
         if phip0 > 0:
             print(f"\n\nphip0 = {phip0}")
             status = "phip0 > 0"
@@ -152,7 +150,6 @@ def LBFGS(
         alpha, v, feval, new_x, new_g = ArmijoWolfeLS(
             f, x, d, feval, v, phip0, 1, m1, m2, tau, sfgrd, max_feval, mina
         )
-
         # output statistics - - - - - - - - - - - - - - - - - - - - - - - - - -
 
         print("\t{:6.4f}".format(alpha), end="")
@@ -179,7 +176,6 @@ def LBFGS(
                 color="r",
                 alpha=0.3,
             )
-
         # - - compute and store s,y and rho - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         s = new_x - x  # s^i = x^{i + 1} - x^i
         y = new_g - g  # y^i = \nabla f( x^{i + 1} ) - \nabla f( x^i )
@@ -197,6 +193,7 @@ def LBFGS(
         # - - update and iterate - - - - - - - - - - - - - - - - - - - - - - - - - - -
         x = new_x
         g = new_g
+
         ng = np.linalg.norm(g)
         iteration += 1
 
@@ -310,4 +307,4 @@ def check_input(f, x, delta, eps, max_feval, m1, m2, tau, sfgrd, m_inf, mina):
 
 
 if __name__ == "__main__":
-    LBFGS(simple_f, [4, 2])
+    LBFGS(ackley, [4, 1])
