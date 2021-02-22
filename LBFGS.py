@@ -3,7 +3,7 @@ import ackley
 import simple_f
 import matplotlib.pyplot as plt
 from collections import deque
-
+from checks import check_input
 
 class NocedalAlgorithm:
     def __init__(self, M: int, B_0):
@@ -92,12 +92,9 @@ def LBFGS(
     ax.scatter(x[0], x[1], color="r", marker=".")
     f.plot_general(fig)
 
-    #  reading and checking input - - - - - - - - - - - - - - - - - - - - -
-    if not check_input(f, x, delta, eps, max_feval, m1, m2, tau, sfgrd, m_inf, mina):
-        return
-
+    # checking input - - - - - - - - - - - - - - - - - - - - -
+    check_input(f, x, delta, eps, max_feval, m1, m2, tau, sfgrd, m_inf, mina)
     n = len(x)
-
     print("\nL-BFGS method starts")
 
     # initializations - - - - - - - - - - - - - - - - - - - - - - - -
@@ -116,8 +113,6 @@ def LBFGS(
         ng0 = -ng  # norm of first subgradient: why is there a "-"? -)
 
     B_0 = np.repeat(delta, n)
-    d = -B_0 * g
-
     nocedal = NocedalAlgorithm(M, B_0)
 
     # main loop - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -142,7 +137,6 @@ def LBFGS(
         # as in Newton's method, the default initial stepsize is 1
 
         phip0 = np.dot(g, d)
-        print('')
         if phip0 > 0:
             print(f"\n\nphip0 = {phip0}")
             status = "phip0 > 0"
@@ -261,49 +255,7 @@ def ArmijoWolfeLS(
     print("WE STILL HAVE TO HANDLE NO POINT SATISFYING A-W")
 
 
-def check_input(f, x, delta, eps, max_feval, m1, m2, tau, sfgrd, m_inf, mina):
 
-    if not callable(f.function):
-        print("Error: f not a function")
-        return False
-
-    try:
-        x = np.asarray(x, dtype=np.float)
-        delta = np.float(delta)
-        eps = np.float(eps)
-        max_feval = np.float(max_feval)
-        m1 = np.float(m1)
-        m2 = np.float(m2)
-        tau = np.float(tau)
-        sfgrd = np.float(sfgrd)
-        if m_inf != -np.Inf:
-            m_inf = np.float(m_inf)
-        mina = np.float(mina)
-    except:
-        print("Error: double check arguments. they must be real numbers")
-        return False
-
-    if delta < 1e-10:
-        print("delta must be > 0")
-        return False
-
-    if m1 <= 0 or m1 >= 1:
-        print("m1 is not in (0, 1)")
-        return False
-
-    if tau <= 0 or tau >= 1:
-        print("tau is not in (0, 1)")
-        return False
-
-    if sfgrd <= 0 or sfgrd >= 1:
-        print("sfgrd is not in (0, 1)")
-        return False
-
-    if mina < 0:
-        print("mina is < 0")
-        return False
-
-    return True
 
 
 if __name__ == "__main__":
