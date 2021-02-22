@@ -31,7 +31,7 @@ def LBFGS(
 
     # initializations - - - - - - - - - - - - - - - - - - - - - - - -
     feval = 1
-    print("\nfeval\t\tx\tf(x)\t\t|| g(x) ||\tls\talpha*\t y*s\n")
+    print("\n feval \t\t x \t f(x) \t\t || g(x) || \t ls \t alpha* \t y*s \n")
 
     v = f.function(x)
     g = f.gradient(x)
