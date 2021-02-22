@@ -25,6 +25,7 @@ def gradient(x):
         print("input must be 2-D numerical vector")
         sys.exit(1)
     gradient = [4*x1**3, 4*x2**3]
+    gradient = np.asarray(gradient)
     #returning the value
     return gradient
 
