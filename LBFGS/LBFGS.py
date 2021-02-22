@@ -15,7 +15,6 @@ def LBFGS(
     m1=0.0001,
     m2=0.9,
     tau=0.9,
-    sfgrd=0.01,
     mina=1e-16,
 ):
 
@@ -26,7 +25,7 @@ def LBFGS(
     f.plot_general(fig)
 
     # checking input - - - - - - - - - - - - - - - - - - - - -
-    check_input(f, x, delta, eps, max_feval, m1, m2, tau, sfgrd, mina)
+    check_input(f, x, delta, eps, max_feval, m1, m2, tau, mina)
     n = len(x)
     print("\nL-BFGS method starts")
 
@@ -71,7 +70,7 @@ def LBFGS(
             status = "phip0 > 0"
             break
         alpha, v, feval, new_x, new_g = ArmijoWolfeLS(
-            f, x, d, feval, v, phip0, 1, m1, m2, tau, sfgrd, max_feval, mina
+            f, x, d, feval, v, phip0, 1, m1, m2, tau, max_feval, mina
         )
         # output statistics - - - - - - - - - - - - - - - - - - - - - - - - - -
 

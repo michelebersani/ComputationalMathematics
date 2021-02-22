@@ -15,12 +15,11 @@ def f2phi(f, alpha, x, d, feval):
 
 
 def ArmijoWolfeLS(
-    f, x, d, feval, phi0, phip0, alpha_0, m1, m2, tau, sfgrd, max_feval, mina
+    f, x, d, feval, phi0, phip0, alpha_0, m1, m2, tau, max_feval, mina
 ):
 
     lsiter = 1  # count iterations of first phase
     alpha = alpha_0
-
     while feval <= max_feval:
         phia, phip_sup, new_x, new_g, feval = f2phi(f, alpha, x, d, feval)
         if (phia <= phi0 + m1 * alpha * phip0) and (abs(phip_sup) <= -m2 * phip0):
@@ -38,8 +37,7 @@ def ArmijoWolfeLS(
         lsiter += 1
 
     lsiter = 1  # count iterations of second phase
-    alpha = alpha_0
-
+    #alpha = alpha_0
     while feval <= max_feval:
         phia, phip_sup, new_x, new_g, feval = f2phi(f, alpha, x, d, feval)
         if (phia <= phi0 + m1 * alpha * phip0) and (abs(phip_sup) <= -m2 * phip0):
