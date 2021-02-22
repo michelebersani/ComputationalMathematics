@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def check_input(f, x, delta, eps, max_feval, m1, m2, tau, sfgrd, mina):
     assert callable(f.function), "f is not a function"
     assert delta > 1e-10, "delta must be > 0"
