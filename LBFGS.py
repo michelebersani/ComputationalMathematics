@@ -97,10 +97,6 @@ def LBFGS(
     print("\nL-BFGS method starts")
 
     # initializations - - - - - - - - - - - - - - - - - - - - - - - -
-
-    new_x = np.zeros(n)  # last point visited in the line search
-    new_g = np.zeros(n)  # gradient of new_x
-
     feval = 1
     print("\nfeval\t\tx\tf(x)\t\t|| g(x) ||\tls\talpha*\t y*s\n")
 
@@ -164,10 +160,10 @@ def LBFGS(
         # - - compute and store s,y and rho - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         s = new_x - x  # s^i = x^{i + 1} - x^i
         y = new_g - g  # y^i = \nabla f( x^{i + 1} ) - \nabla f( x^i )
-        #y = nocedal.damp_y(s,y) # comment for non-damped L-BFGS
+        # y = nocedal.damp_y(s,y) # comment for non-damped L-BFGS
         inv_rho = np.dot(y, s)
         if inv_rho < 1e-16:
-            print("\n\nError: y^i s^i = {:6.4f}".format(inv_rho))
+            print("\n\nError: y^i s^i = {inv_rho:6.4f}")
             status = "Rho < threshold"
             break
         print(f"\t{inv_rho:2.2E}")
