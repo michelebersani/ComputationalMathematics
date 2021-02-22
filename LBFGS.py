@@ -52,6 +52,22 @@ class NocedalAlgorithm:
             self.saved_s.popleft()
             self.saved_y.popleft()
             self.saved_rho.popleft()
+    
+    def damp_y(self, s:np.ndarray, y:np.ndarray)->np.ndarray:
+        """Returns a damped version of `y`, given `s` and `y`.
+        See Nocedal's Damped L-BGFS for further details.
+        """
+        B_s = self.inverse_H_product(s)
+        s_B_s = np.dot(s,B_s)
+        s_y = np.dot(s,y)
+        
+        if s_y >= 0.2*s_B_s:
+            theta = 1
+        else:
+            theta = 0.8*s_B_s / (s_B_s - s_y)
+        
+        y = theta*y + (1-theta)*B_s
+        return y
 
 
 def LBFGS(
@@ -165,8 +181,9 @@ def LBFGS(
             )
 
         # - - compute and store s,y and rho - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        s = np.subtract(new_x, x)  # s^i = x^{i + 1} - x^i
-        y = np.subtract(new_g, g)  # y^i = \nabla f( x^{i + 1} ) - \nabla f( x^i )
+        s = new_x - x  # s^i = x^{i + 1} - x^i
+        y = new_g - g  # y^i = \nabla f( x^{i + 1} ) - \nabla f( x^i )
+        y = nocedal.damp_y(s,y) # comment for non-damped L-BFGS
         inv_rho = np.dot(y, s)
         if inv_rho < 1e-16:
             print("\n\nError: y^i s^i = {:6.4f}".format(inv_rho))
@@ -174,6 +191,7 @@ def LBFGS(
             break
         print("\t{:2.2E}".format(inv_rho))
         rho = 1 / inv_rho
+        
         nocedal.save(s,y,rho)
 
         # - - update and iterate - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -292,4 +310,4 @@ def check_input(f, x, delta, eps, max_feval, m1, m2, tau, sfgrd, m_inf, mina):
 
 
 if __name__ == "__main__":
-    LBFGS(ackley, [2, 0])
+    LBFGS(ackley, [4, 2])
