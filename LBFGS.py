@@ -82,7 +82,6 @@ def LBFGS(
     m2=0.9,
     tau=0.9,
     sfgrd=0.01,
-    m_inf=-np.Inf,
     mina=1e-16,
 ):
 
@@ -93,7 +92,7 @@ def LBFGS(
     f.plot_general(fig)
 
     # checking input - - - - - - - - - - - - - - - - - - - - -
-    check_input(f, x, delta, eps, max_feval, m1, m2, tau, sfgrd, m_inf, mina)
+    check_input(f, x, delta, eps, max_feval, m1, m2, tau, sfgrd, mina)
     n = len(x)
     print("\nL-BFGS method starts")
 
@@ -146,15 +145,7 @@ def LBFGS(
         )
         # output statistics - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-        print("\t{:6.4f}".format(alpha), end="")
-        if alpha <= mina:
-            status = (
-                "alpha <= mina ----> A-W not satisfied by any point far enough from x"
-            )
-            break
-        if v <= m_inf:
-            status = "unbounded"
-            break
+        print(f"\t{alpha:6.4f}", end="")
 
         # - - plot new point - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         if n == 2 and Plotf:
@@ -179,7 +170,7 @@ def LBFGS(
             print("\n\nError: y^i s^i = {:6.4f}".format(inv_rho))
             status = "Rho < threshold"
             break
-        print("\t{:2.2E}".format(inv_rho))
+        print(f"\t{inv_rho:2.2E}")
         rho = 1 / inv_rho
         
         nocedal.save(s,y,rho)
@@ -214,13 +205,12 @@ def ArmijoWolfeLS(
 ):
 
     lsiter = 1  # count iterations of first phase
-    alpha_sup = alpha_0
+    alpha = alpha_0
 
     while feval <= max_feval:
-        phia, phip_sup, new_x, new_g, feval = f2phi(f, alpha_sup, x, d, feval)
-        if (phia <= phi0 + m1 * alpha_sup * phip0) and (abs(phip_sup) <= -m2 * phip0):
+        phia, phip_sup, new_x, new_g, feval = f2phi(f, alpha, x, d, feval)
+        if (phia <= phi0 + m1 * alpha * phip0) and (abs(phip_sup) <= -m2 * phip0):
             print("\t(A)", lsiter, end="")
-            alpha = alpha_sup
             return (
                 alpha,
                 phia,
@@ -230,18 +220,16 @@ def ArmijoWolfeLS(
             )  # Armijo + strong Wolfe satisfied, we are done
         if phip_sup >= 0:  # derivative is positive, break
             break
-        alpha_sup = alpha_sup / tau
+        alpha = alpha / tau
         lsiter += 1
 
     lsiter = 1  # count iterations of second phase
-
-    alpha_sup = alpha_0
+    alpha = alpha_0
 
     while feval <= max_feval:
-        phia, phip_sup, new_x, new_g, feval = f2phi(f, alpha_sup, x, d, feval)
-        if (phia <= phi0 + m1 * alpha_sup * phip0) and (abs(phip_sup) <= -m2 * phip0):
+        phia, phip_sup, new_x, new_g, feval = f2phi(f, alpha, x, d, feval)
+        if (phia <= phi0 + m1 * alpha * phip0) and (abs(phip_sup) <= -m2 * phip0):
             print("\t(A)", lsiter, end="")
-            alpha = alpha_sup
             return (
                 alpha,
                 phia,
@@ -249,7 +237,9 @@ def ArmijoWolfeLS(
                 new_x,
                 new_g,
             )  # Armijo + strong Wolfe satisfied, we are done
-        alpha_sup = alpha_sup * tau
+        alpha = alpha * tau
+        if alpha < mina:
+            break
         lsiter += 1
 
     print("WE STILL HAVE TO HANDLE NO POINT SATISFYING A-W")
