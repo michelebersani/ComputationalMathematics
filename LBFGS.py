@@ -1,5 +1,6 @@
 import numpy as np
 import ackley
+import simple_f
 import matplotlib.pyplot as plt
 from collections import deque
 
@@ -89,7 +90,7 @@ def LBFGS(
     Plotf = True  # if f and the trajectory have to be plotted when n = 2
     fig, ax = plt.subplots()
     ax.scatter(x[0], x[1], color="r", marker=".")
-    ackley.plot_general(fig)
+    f.plot_general(fig)
 
     #  reading and checking input - - - - - - - - - - - - - - - - - - - - -
     if not check_input(f, x, delta, eps, max_feval, m1, m2, tau, sfgrd, m_inf, mina):
@@ -107,8 +108,8 @@ def LBFGS(
     feval = 1
     print("\nfeval\t\tx\tf(x)\t\t|| g(x) ||\tls\talpha*\t y*s\n")
 
-    v = ackley.function(x)
-    g = ackley.gradient(x)
+    v = f.function(x)
+    g = f.gradient(x)
     ng = np.linalg.norm(g)
     ng0 = 1  # un-scaled stopping criterion
     if eps < 0:
@@ -139,7 +140,6 @@ def LBFGS(
         # determine new descent direction - - - - - - - - - - - - - - - - - - -
 
         d = -nocedal.inverse_H_product(g)
-        # d = -NocedalDirection(g, bound, saved_rho, saved_s, saved_y, B_0, iteration)
 
         # compute step size - - - - - - - - - - - - - - - - - - - - - - - - - -
         # as in Newton's method, the default initial stepsize is 1
@@ -147,7 +147,7 @@ def LBFGS(
         phip0 = np.dot(g, d)
         if phip0 > 0:
             print(f"\n\nphip0 = {phip0}")
-            status = "phip > 0"
+            status = "phip0 > 0"
             break
         alpha, v, feval, new_x, new_g = ArmijoWolfeLS(
             f, x, d, feval, v, phip0, 1, m1, m2, tau, sfgrd, max_feval, mina
@@ -183,7 +183,7 @@ def LBFGS(
         # - - compute and store s,y and rho - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         s = new_x - x  # s^i = x^{i + 1} - x^i
         y = new_g - g  # y^i = \nabla f( x^{i + 1} ) - \nabla f( x^i )
-        y = nocedal.damp_y(s,y) # comment for non-damped L-BFGS
+        #y = nocedal.damp_y(s,y) # comment for non-damped L-BFGS
         inv_rho = np.dot(y, s)
         if inv_rho < 1e-16:
             print("\n\nError: y^i s^i = {:6.4f}".format(inv_rho))
@@ -310,4 +310,4 @@ def check_input(f, x, delta, eps, max_feval, m1, m2, tau, sfgrd, m_inf, mina):
 
 
 if __name__ == "__main__":
-    LBFGS(ackley, [4, 2])
+    LBFGS(simple_f, [4, 2])
