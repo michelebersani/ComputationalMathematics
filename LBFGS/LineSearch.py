@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def f2phi(f, alpha, x, d, feval):
+def f2phi(f, alpha, x, d):
 
     # phi( alpha ) = f( x + alpha * d )
     # phi'( alpha ) = < \nabla f( x + alpha * d ) , d >
@@ -10,20 +10,22 @@ def f2phi(f, alpha, x, d, feval):
     phi = f.function(new_x)
     new_g = f.gradient(new_x)
     phip = np.dot(d, new_g)
-    feval = feval + 1
-    return phi, phip, new_x, new_g, feval
+    return phi, phip, new_x, new_g
 
 
 def ArmijoWolfeLS(
     f, x, d, feval, phi0, phip0, alpha_0, m1, m2, tau, max_feval, mina
 ):
 
-    lsiter = 1  # count iterations of first phase
+    lsiter1 = 0  # count iterations of first phase
+    lsiter2 = 0  # count iterations of second phase
     alpha = alpha_0
     while feval <= max_feval:
-        phia, phip_sup, new_x, new_g, feval = f2phi(f, alpha, x, d, feval)
+        phia, phip_sup, new_x, new_g = f2phi(f, alpha, x, d)
+        feval += 1
+        lsiter1 += 1
         if (phia <= phi0 + m1 * alpha * phip0) and (abs(phip_sup) <= -m2 * phip0):
-            print("\t(A)", lsiter, end="")
+            print(f'\t {lsiter1:2d} {lsiter2:2d}', end="")
             return (
                 alpha,
                 phia,
@@ -34,14 +36,16 @@ def ArmijoWolfeLS(
         if phip_sup >= 0:  # derivative is positive, break
             break
         alpha = alpha / tau
-        lsiter += 1
 
-    lsiter = 1  # count iterations of second phase
-    alpha = alpha_0
+
+
+    alpha = alpha_0*tau
     while feval <= max_feval:
-        phia, phip_sup, new_x, new_g, feval = f2phi(f, alpha, x, d, feval)
+        phia, phip_sup, new_x, new_g = f2phi(f, alpha, x, d)
+        feval = feval + 1
+        lsiter2 += 1
         if (phia <= phi0 + m1 * alpha * phip0) and (abs(phip_sup) <= -m2 * phip0):
-            print("\t(B)", lsiter, end="")
+            print(f'\t {lsiter1:2d} {lsiter2:2d}', end="")
             return (
                 alpha,
                 phia,
@@ -52,6 +56,6 @@ def ArmijoWolfeLS(
         alpha = alpha * tau
         if alpha < mina:
             break
-        lsiter += 1
+
 
     raise Exception("ArmijoWolfeLS could not find a point.")
