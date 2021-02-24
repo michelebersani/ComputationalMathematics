@@ -3,9 +3,10 @@ import matplotlib.pyplot as plt
 from .Nocedal import NocedalAlgorithm
 from .checks import check_input
 from .LineSearch import ArmijoWolfeLS
+import logging
 
 
-def LBFGS(
+def LBFGS_2D(
     f,
     x,
     M=20,
@@ -69,11 +70,11 @@ def LBFGS(
             print(f"\n\nphip0 = {phip0}")
             status = "phip0 > 0"
             break
-        alpha, v, feval, new_x, new_g = ArmijoWolfeLS(
+        new_x, new_g, alpha, v, feval, lsiter = ArmijoWolfeLS(
             f, x, d, feval, v, phip0, 1, m1, m2, tau, max_feval, mina
         )
         # output statistics - - - - - - - - - - - - - - - - - - - - - - - - - -
-
+        print(f'\t {lsiter[0]:2d} {lsiter[1]:2d}', end="")
         print(f"\t{alpha:6.4f}", end="")
 
         # - - plot new point - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
