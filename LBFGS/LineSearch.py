@@ -1,5 +1,4 @@
 import numpy as np
-import logging
 
 
 def f2phi(f, alpha, x, d):

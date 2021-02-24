@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 from .Nocedal import NocedalAlgorithm
 from .checks import check_input
 from .LineSearch import ArmijoWolfeLS
-import logging
 
 
 def LBFGS_2D(
