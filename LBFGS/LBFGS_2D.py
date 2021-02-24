@@ -113,4 +113,5 @@ def LBFGS_2D(
 
     print("\n\nEXITED WITH STATUS:\t", status)
     print(f"Last x was: {new_x} \t Last gradient was: {new_g}")
+    print(f"Last (minimum) f value is: {v}")
     plt.show()
