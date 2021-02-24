@@ -30,11 +30,6 @@ def gradient(x):
     return gradient
 
 def plot_general(fig):
-  #this function will plot a general ackley function just to view it.
-  limit = 1000 #number of points
-  #common lower and upper limits for both x1 and x2 are used
-  lower_limit = -5
-  upper_limit = 5
   #generating x1 and x2 values
   x = np.linspace(-5, 5, 100)
   y = np.linspace(-5, 5, 100)
