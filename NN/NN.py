@@ -45,12 +45,14 @@ class NN_model:
         total_weights = [w.ravel() for w in self.weights]
         return np.concatenate(total_weights)
 
-    def set_weights(self, weights):
+    def set_weights(self, ws):
         p = 0
-        for w in self.weights:
-            slice = weights[p : p + w.size]
-            w = slice.reshape(w.shape)
-            p += w.size
+        n_layers = len(self.weights)
+        for i in range(n_layers):
+            size = self.weights[i].size
+            slice = ws[p : p + size]
+            self.weights[i] = slice.reshape(self.weights[i].shape)
+            p += size
 
     def __call__(self, input: np.ndarray) -> np.ndarray:
         self.input = np.append(input, [1.0])  # for bias
@@ -64,9 +66,10 @@ class NN_model:
         for i in range(1, n_layers):
             self.ins[i] = np.dot(self.weights[i], self.outs[i - 1])
             self.outs[i] = self.activ_f(self.ins[i])
-            self.outs[i] = np.append(self.outs[i], [1.0])  # bias
-        # return output of last layer (delete appended 1)
-        return self.outs[-1][:-1]
+            if i < n_layers-1:
+                self.outs[i] = np.append(self.outs[i], [1.0])  # bias
+        # return output of last layer
+        return self.outs[-1]
 
     def loss(self, target: np.ndarray):
         x = self.outs[-1]
@@ -79,7 +82,7 @@ class NN_model:
         self.D_outs[-1] = loss_grad
 
         # loop in reverse, up to first hidden layer (excluded)
-        for i in range(1, n_layers, -1):
+        for i in reversed(range(1,n_layers)):
             g = self.D_outs[i]
             g = g * self.activ_f.gradient(self.ins[i])
             self.D_weights[i] = np.outer(g, self.outs[i - 1])
@@ -87,7 +90,7 @@ class NN_model:
             self.D_outs[i - 1] = np.dot(wT, g)
 
         # first hidden layer:
-        g = self.D_outs[0]
+        g = self.D_outs[0][:-1] #bias not needed
         g = g * self.activ_f.gradient(self.ins[0])
         self.D_weights[0] = np.outer(g, self.input)
 
