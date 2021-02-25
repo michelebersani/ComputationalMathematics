@@ -4,7 +4,6 @@ from .Nocedal import NocedalAlgorithm
 from .checks import check_input
 import logging
 
-
 class LBFGS:
     def __init__(
         self,
@@ -15,6 +14,7 @@ class LBFGS:
         m1=0.0001,
         m2=0.9,
         tau=0.9,
+        alpha0=0.9,
         mina=1e-16,
     ):
         self.M = M
@@ -25,6 +25,7 @@ class LBFGS:
         self.m1 = m1
         self.m2 = m2
         self.tau = tau
+        self.alpha0=0.9
         self.mina = mina
 
         self.f = None
@@ -43,13 +44,18 @@ class LBFGS:
         self.nocedal = NocedalAlgorithm(self.M, B_0)
 
         status = None
+        ### log infos header
+        row = ['AW LS iters [0]', 'AW LS iters [1]', 'alpha', 'f value']
+        string = "{: >15} {: >15} {: >15} {: >15}".format(*row)
+        logging.info(string)
+        ###
         while status is None:
             status = self.step()
 
-        print("Exited with status:")
-        print(status)
+        print("Exited with status: {status}")
         print("Minimum function value found is:")
         print(self.f_value)
+        print(f"f evaluations: {self.feval}")
 
     def step(self):
         self.g = self.f.gradient(self.x)
@@ -70,9 +76,14 @@ class LBFGS:
         
         # find new_x and new_g using AW line search
         alpha, self.f_value, lsiter = self.AW_line_search(d, phi0, phip0)
-        logging.info(f"AW line-search phase 0 steps: {lsiter[0]}")
-        logging.info(f"AW line-search phase 1 steps: {lsiter[1]}")
-        logging.info(f"AW line-search found {alpha:6.4f}")
+        
+        ### log infos
+        row = [lsiter[0], lsiter[1]]
+        row.append(f"{alpha:6.4f}")
+        row.append(f"{self.f_value:1.3E}")
+        string = "{: >15} {: >15} {: >15} {: >15}".format(*row)
+        logging.info(string)
+        ###
 
         s = self.new_x - self.x
         y = self.new_g - self.g
@@ -90,7 +101,7 @@ class LBFGS:
     def AW_line_search(self, d, phi0, phip0):
         lsiter = [0, 0]  # count iterations of phase 0 and 1
         phase = 0
-        alpha = 1
+        alpha = self.alpha0
         while self.feval < self.max_feval:
             self.feval += 1
             lsiter[phase] += 1
@@ -111,7 +122,7 @@ class LBFGS:
             # if derivative is positive, start phase 1
             if phase == 0 and phipa >= 0:
                 phase = 1
-                alpha = self.tau
+                alpha = self.alpha0*self.tau
             
             if alpha < self.mina:
                 return None
