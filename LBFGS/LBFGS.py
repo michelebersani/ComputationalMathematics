@@ -72,7 +72,10 @@ class LBFGS:
             return "phip0 > 0"
         
         # find new_x and new_g using AW line search
-        alpha, self.f_value, lsiter = self.AW_line_search(d, phi0, phip0)
+        AW_result = self.AW_line_search(d, phi0, phip0)
+        if AW_result is None:
+            return "AW line-search could not find a point"
+        alpha, self.f_value, lsiter = AW_result
         
         ### log infos
         row = [lsiter[0], lsiter[1]]

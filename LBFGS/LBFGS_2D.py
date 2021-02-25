@@ -68,9 +68,14 @@ def LBFGS_2D(
             print(f"\n\nphip0 = {phip0}")
             status = "phip0 > 0"
             break
-        new_x, new_g, alpha, v, feval, lsiter = ArmijoWolfeLS(
+
+        try:
+            new_x, new_g, alpha, v, feval, lsiter = ArmijoWolfeLS(
             f, x, d, feval, v, phip0, 1, m1, m2, tau, max_feval, mina
-        )
+            )
+        except:
+            status = "AW line-search could not find a point"
+            break
         # output statistics - - - - - - - - - - - - - - - - - - - - - - - - - -
         print(f'\t {lsiter[0]:2d} {lsiter[1]:2d}', end="")
         print(f"\t{alpha:6.4f}", end="")
