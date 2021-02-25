@@ -8,13 +8,17 @@ class NN_model:
         n_layers = len(layers) - 1
         # for each layer, a matrix of weights
         self.weights = []
+        # D_weights[i] is the gradient of the Loss w.r.t. weights[i]
+        self.D_weights = []
         for i in range(n_layers):
             fan_in = layers[i]
             fan_out = layers[i + 1]
             fan_in += 1  # for the layer bias
             shape = (fan_out, fan_in)
             w = np.zeros(shape)
+            D_w = np.zeros(shape)
             self.weights.append(w)
+            self.D_weights.append(D_w)
 
         self.activ_f = activ_f
         self.loss_f = loss_f
@@ -25,8 +29,6 @@ class NN_model:
         self.outs = [None] * n_layers
         # D_out[i] is the gradient of the Loss w.r.t. outs[i]
         self.D_outs = [None] * n_layers
-        # D_weights[i] is the gradient of the Loss w.r.t. weights[i]
-        self.D_weights = [None] * n_layers
         # keep track of the last input to the model
         self.input = None
 
@@ -85,16 +87,22 @@ class NN_model:
         for i in reversed(range(1,n_layers)):
             g = self.D_outs[i]
             g = g * self.activ_f.gradient(self.ins[i])
-            self.D_weights[i] = np.outer(g, self.outs[i - 1])
+            self.D_weights[i] += np.outer(g, self.outs[i - 1])
             wT = self.weights[i].transpose()
             self.D_outs[i - 1] = np.dot(wT, g)
 
         # first hidden layer:
         g = self.D_outs[0][:-1] #bias not needed
         g = g * self.activ_f.gradient(self.ins[0])
-        self.D_weights[0] = np.outer(g, self.input)
+        self.D_weights[0] += np.outer(g, self.input)
 
+    def get_grad(self):
         # return gradient on weights
         total_gradient = [Dw.flatten() for Dw in self.D_weights]
         total_gradient = np.concatenate(total_gradient)
         return total_gradient
+    
+    def zero_grad(self):
+        # set the gradient to zero
+        for D_w in self.D_weights:
+            D_w.fill(0.)
