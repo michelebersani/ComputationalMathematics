@@ -4,19 +4,44 @@ from .Nocedal import NocedalAlgorithm
 from .checks import check_input
 import logging
 
+
 class LBFGS:
     def __init__(
         self,
-        M=20,
-        delta=1,
-        eps=1e-10,
-        max_feval=1000,
-        m1=0.0001,
-        m2=0.9,
-        tau=0.9,
-        alpha0=0.9,
-        mina=1e-16,
+        M: int = 20,
+        delta: float = 1,
+        eps: float = 1e-10,
+        max_feval: int = 1000,
+        m1: float = 0.0001,
+        m2: float = 0.9,
+        tau: float = 0.9,
+        alpha0: float = 1,
+        mina: float = 1e-16,
     ):
+        """Limited-memory BFGS (quasi-Newton method).
+
+        Args:
+            M (int, optional): Memory amount. Defaults to 20.
+            delta (float, optional): approximation of inverse H is initialized
+                as `I*delta`. Defaults to 1.
+            eps (float, optional): the algorithm stops when
+                `||gradient|| < eps`. Defaults to 1e-10.
+            max_feval (int, optional): Max number of f evaluations. Defaults to 1000.
+            m1 (float, optional): parameter for Armijo's condition. Defaults to 0.0001.
+            m2 (float, optional): parameter for Wolfe's condition. Defaults to 0.9.
+            tau (float, optional): Exponential factor for line-search. Defaults to 0.9.
+            alpha0 (float, optional): Initial factor for line-search. Defaults to 1.
+            mina (float, optional): Min factor for line-search. Defaults to 1e-16.
+
+        Examples
+        --------
+        `f` must be an object that implements a `function(x)` (returning a scalar)
+        and `gradient(x)` method (returnig a column vector).
+        The x and the gradient must be `numpy.ndarray`.
+        >>> solver = LBFGS()
+        >>> status = solver.solve(f,x)
+        >>> print(status, "Solution found:", solver.x)
+        """
         self.M = M
         self.delta = delta
         self.eps = eps
@@ -25,7 +50,7 @@ class LBFGS:
         self.m1 = m1
         self.m2 = m2
         self.tau = tau
-        self.alpha0=1
+        self.alpha0 = 1
         self.mina = mina
 
         self.f = None
@@ -45,12 +70,12 @@ class LBFGS:
 
         status = None
         ### log infos header
-        row = ['AW LS iters [0]', 'AW LS iters [1]', 'alpha', 'f value']
+        row = ["AW LS iters [0]", "AW LS iters [1]", "alpha", "f value"]
         _log_infos(row)
         ###
         while status is None:
             status = self.step()
-        
+
         return status
 
     def step(self):
@@ -62,20 +87,20 @@ class LBFGS:
 
         if self.feval > self.max_feval:
             return "max n. of f evaluations reached"
-        
+
         d = -self.nocedal.inverse_H_product(self.g)
-        
+
         phi0 = self.f_value
         phip0 = np.dot(self.g, d)
         if phip0 > 0:
             return "phip0 > 0"
-        
+
         # find new_x and new_g using AW line search
         AW_result = self.AW_line_search(d, phi0, phip0)
         if AW_result is None:
             return "AW line-search could not find a point"
         alpha, self.f_value, lsiter = AW_result
-        
+
         ### log infos
         row = [lsiter[0], lsiter[1]]
         row.append(f"{alpha:6.4f}")
@@ -88,13 +113,12 @@ class LBFGS:
         inv_rho = np.dot(y, s)
         if inv_rho < 1e-16:
             return "1/rho too small: y*s < 1e-16"
-        
+
         rho = 1 / inv_rho
         self.nocedal.save(s, y, rho)
 
         self.x = self.new_x
         self.g = self.new_g
-
 
     def AW_line_search(self, d, phi0, phip0):
         lsiter = [0, 0]  # count iterations of phase 0 and 1
@@ -116,12 +140,12 @@ class LBFGS:
                 return alpha, phia, lsiter
             # update alpha
             alpha = alpha / self.tau if phase == 0 else alpha * self.tau
-            
+
             # if derivative is positive, start phase 1
             if phase == 0 and phipa >= 0:
                 phase = 1
-                alpha = self.alpha0*self.tau
-            
+                alpha = self.alpha0 * self.tau
+
             if alpha < self.mina:
                 return None
 
@@ -130,5 +154,5 @@ class LBFGS:
 
 
 def _log_infos(row):
-    string = "{: >15} {: >15} {: >15} {: >15}".format(*row) 
+    string = "{: >15} {: >15} {: >15} {: >15}".format(*row)
     logging.info(string)
