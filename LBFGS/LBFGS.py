@@ -25,7 +25,7 @@ class LBFGS:
         self.m1 = m1
         self.m2 = m2
         self.tau = tau
-        self.alpha0=0.9
+        self.alpha0=1
         self.mina = mina
 
         self.f = None
@@ -51,11 +51,8 @@ class LBFGS:
         ###
         while status is None:
             status = self.step()
-
-        print("Exited with status: {status}")
-        print("Minimum function value found is:")
-        print(self.f_value)
-        print(f"f evaluations: {self.feval}")
+        
+        return status
 
     def step(self):
         self.g = self.f.gradient(self.x)
