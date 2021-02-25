@@ -25,7 +25,7 @@ class Sigmoid(ActivFunction):
 
 class MSE():
     def __call__(self, x:np.ndarray, y:np.ndarray)->np.ndarray:
-        return (y-x)**2
+        return ((y-x)**2).sum()
 
     def gradient(self, x:np.ndarray, y:np.ndarray)->np.ndarray:
         return 2*(x-y)
