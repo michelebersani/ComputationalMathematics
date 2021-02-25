@@ -46,8 +46,7 @@ class LBFGS:
         status = None
         ### log infos header
         row = ['AW LS iters [0]', 'AW LS iters [1]', 'alpha', 'f value']
-        string = "{: >15} {: >15} {: >15} {: >15}".format(*row)
-        logging.info(string)
+        _log_infos(row)
         ###
         while status is None:
             status = self.step()
@@ -81,8 +80,7 @@ class LBFGS:
         row = [lsiter[0], lsiter[1]]
         row.append(f"{alpha:6.4f}")
         row.append(f"{self.f_value:1.3E}")
-        string = "{: >15} {: >15} {: >15} {: >15}".format(*row)
-        logging.info(string)
+        _log_infos(row)
         ###
 
         s = self.new_x - self.x
@@ -129,3 +127,8 @@ class LBFGS:
 
         # No point found! D:
         return None
+
+
+def _log_infos(row):
+    string = "{: >15} {: >15} {: >15} {: >15}".format(*row) 
+    logging.info(string)
