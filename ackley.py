@@ -52,7 +52,7 @@ def plot_general(fig):
   Z = np.zeros((len(X),len(Y)))
   for i in range(len(X)):
     for j in range(len(Y)):
-        Z[i,j] = function([X[i,j],Y[i,j]])
+        Z[i,j], _ = function([X[i,j],Y[i,j]])
   #plotting the function
   plt.contour(X, Y, Z, label='Ackley Function')
   
