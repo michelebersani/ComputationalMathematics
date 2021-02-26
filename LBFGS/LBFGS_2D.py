@@ -32,8 +32,7 @@ def LBFGS_2D(
     feval = 1
     print("\n feval \t\t x \t f(x) \t\t || g(x) || \t ls \t alpha* \t y*s \n")
 
-    v = f.function(x)
-    g = f.gradient(x)
+    v, g = f.function(x)
     ng = np.linalg.norm(g)
     ng0 = 1  # un-scaled stopping criterion
     if eps < 0:
@@ -127,8 +126,7 @@ def f2phi(f, alpha, x, d):
     # phi'( alpha ) = < \nabla f( x + alpha * d ) , d >
 
     new_x = x + alpha * d
-    phi = f.function(new_x)
-    new_g = f.gradient(new_x)
+    phi, new_g = f.function(new_x)
     phip = np.dot(d, new_g)
     return phi, phip, new_x, new_g
 
