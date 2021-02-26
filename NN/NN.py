@@ -1,5 +1,5 @@
 import numpy as np
-from .Functions import ActivFunction, LossFunction
+from .Functions import ActivFunction, LossFunction, Identity
 
 
 class NN_model:
@@ -20,10 +20,9 @@ class NN_model:
             self.weights.append(w)
             self.D_weights.append(D_w)
 
-        self.activ_f = activ_f
-        self.loss_f = loss_f
-        # for each layer, keep track of the input
-        self.ins = [None] * n_layers
+        self.activ_fs = [activ_f() for i in range(n_layers-1)]
+        self.activ_fs.append(Identity())
+        self.loss_f = loss_f()
         # for each layer, keep track of the output
         # remember: outs[i] = activ_f(nets[i])
         self.outs = [None] * n_layers
@@ -61,13 +60,13 @@ class NN_model:
         n_layers = len(self.weights)
 
         # first layer
-        self.ins[0] = np.dot(self.weights[0], self.input)
-        self.outs[0] = self.activ_f(self.ins[0])
+        ls_in = np.dot(self.weights[0], self.input)
+        self.outs[0] = self.activ_fs[0](ls_in)
         self.outs[0] = np.append(self.outs[0], [1.0])  # bias
         # other layers
         for i in range(1, n_layers):
-            self.ins[i] = np.dot(self.weights[i], self.outs[i - 1])
-            self.outs[i] = self.activ_f(self.ins[i])
+            ls_in = np.dot(self.weights[i], self.outs[i - 1])
+            self.outs[i] = self.activ_fs[i](ls_in)
             if i < n_layers-1:
                 self.outs[i] = np.append(self.outs[i], [1.0])  # bias
         # return output of last layer
@@ -80,13 +79,13 @@ class NN_model:
     def grad(self, target: np.ndarray) -> np.ndarray:
         n_layers = len(self.weights)
 
-        loss_grad = self.loss_f.gradient(self.outs[-1], target)
+        loss_grad = self.loss_f.grad
         self.D_outs[-1] = loss_grad
 
         # loop in reverse, up to first hidden layer (excluded)
         for i in reversed(range(1,n_layers)):
             g = self.D_outs[i]
-            g = g * self.activ_f.gradient(self.ins[i])
+            g = g * self.activ_fs[i].grad
             self.D_weights[i] += np.outer(g, self.outs[i - 1])
             # remove bias column and transpose
             wT = self.weights[i][:,:-1].transpose()
@@ -94,7 +93,7 @@ class NN_model:
 
         # first hidden layer:
         g = self.D_outs[0]
-        g = g * self.activ_f.gradient(self.ins[0])
+        g = g * self.activ_fs[0].grad
         self.D_weights[0] += np.outer(g, self.input)
 
     def get_grad(self):
