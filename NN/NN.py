@@ -88,11 +88,12 @@ class NN_model:
             g = self.D_outs[i]
             g = g * self.activ_f.gradient(self.ins[i])
             self.D_weights[i] += np.outer(g, self.outs[i - 1])
-            wT = self.weights[i].transpose()
+            # remove bias column and transpose
+            wT = self.weights[i][:,:-1].transpose()
             self.D_outs[i - 1] = np.dot(wT, g)
 
         # first hidden layer:
-        g = self.D_outs[0][:-1] #bias not needed
+        g = self.D_outs[0]
         g = g * self.activ_f.gradient(self.ins[0])
         self.D_weights[0] += np.outer(g, self.input)
 
