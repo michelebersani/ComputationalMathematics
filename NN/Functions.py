@@ -24,3 +24,16 @@ class MSE(LossFunction):
     def __call__(self, x:np.ndarray, y:np.ndarray)->np.ndarray:
         self.grad = 2*(x-y)
         return ((y-x)**2).sum()
+
+# regularization functions
+# they return directly the gradient component
+# equivalent to adding a regularization term to the loss
+
+def L1_reg(alpha:float, weights:np.ndarray)->np.ndarray:
+    grad = np.ones_like(weights)
+    grad[weights < 0] = -1
+    return grad*alpha
+
+def L2_reg(alpha:float, weights:np.ndarray)->np.ndarray:
+    grad = weights*alpha
+    return grad
