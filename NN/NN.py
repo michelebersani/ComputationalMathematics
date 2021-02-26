@@ -30,9 +30,7 @@ class NN_model:
         ...     loss = model.loss(Y[i])
         ...     print(loss)
         ...     g = model.grad().get_grad()
-        ...     ws = model.get_weights()
-        ...     ws = ws - 0.5*g
-        ...     model.set_weights(ws)
+        ...     model.Weights = model.Weights - 0.5*g
         ...
         """
         # input layer does not count
@@ -73,11 +71,13 @@ class NN_model:
             a = np.sqrt(a)
             self.weights[i] = np.random.uniform(low=-a, high=a, size=shape_i)
 
-    def get_weights(self):
+    @property
+    def Weights(self):
         total_weights = [w.ravel() for w in self.weights]
         return np.concatenate(total_weights)
-
-    def set_weights(self, ws):
+    
+    @Weights.setter
+    def Weights(self, ws):
         p = 0
         n_layers = len(self.weights)
         for i in range(n_layers):
