@@ -35,12 +35,13 @@ class LBFGS:
 
         Examples
         --------
-        `f` must be an object that implements a `function(x)` (returning a scalar)
-        and `gradient(x)` method (returnig a column vector).
-        The x and the gradient must be `numpy.ndarray`.
+        `f` must be an object that implements a `f.function(x)` method returning `(v,g)`,
+        where `v` and `g` are respectively the value and the gradient of `f` in `x`.
+        The `x` and the gradient must be `numpy.ndarray`.
         >>> solver = LBFGS()
         >>> status = solver.solve(f,x)
         >>> print(status, "Solution found:", solver.x)
+        >>> print("Value of f in solution:", solver.f_value)
         """
         self.M = M
         self.delta = delta
@@ -63,7 +64,6 @@ class LBFGS:
     def solve(self, f, x):
         self.f = f
         self.x = x
-        self.f_value = self.f.function(self.x)
         n = len(x)
         B_0 = np.repeat(self.delta, n)
         self.nocedal = NocedalAlgorithm(self.M, B_0)
@@ -79,7 +79,7 @@ class LBFGS:
         return status
 
     def step(self):
-        self.g = self.f.gradient(self.x)
+        self.f_value, self.g = self.f.function(self.x)
 
         ng = np.linalg.norm(self.g)
         if ng <= self.eps:
@@ -129,9 +129,8 @@ class LBFGS:
             lsiter[phase] += 1
             # set new candidate point
             self.new_x = self.x + alpha * d
-            self.new_g = self.f.gradient(self.new_x)
             # values for line search
-            phia = self.f.function(self.new_x)
+            phia, self.new_g = self.f.function(self.new_x)
             phipa = np.dot(self.new_g, d)
             # AW conditions
             armijo = phia <= phi0 + self.m1 * alpha * phip0

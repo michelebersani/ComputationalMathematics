@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 import math
 
 def function(x):
-  #returns the value at the given coordinate
+  #compute the value at the given coordinate
   try:
     x1 = np.float(x[0])
     x2 = np.float(x[1])
@@ -14,24 +14,16 @@ def function(x):
   part_1 = math.sqrt(0.5*(x1*x1 + x2*x2))
   part_2 = 0.5*(math.cos(2*np.pi*x1) + math.cos(2*np.pi*x2))
   value = math.exp(1) + 20 -20*math.exp(-0.2 * part_1) - math.exp(part_2)
-  #returning the value
-  return value
 
-def gradient(x):
-  #returns the gradient at the given coordinate
-  try:
-    x1 = np.float(x[0])
-    x2 = np.float(x[1])
-  except:
-    print("input must be 2-D numerical vector")
-    sys.exit(1)
+  #compute the gradient at the given coordinate
   part_1 = math.sqrt(0.5*(x1*x1 + x2*x2))
   part_2 = 0.5*(math.cos(2*math.pi*x1) + math.cos(2*math.pi*x2))
   gradient = [0,0]
   if np.abs(part_1) > 1e-12:
     gradient = 2 / part_1 * np.exp(-0.2 * part_1) * np.asarray([x1,x2]) + math.exp(part_2) * math.pi * np.sin(2*math.pi*np.asarray([x1,x2]))
-  #returning the value
-  return gradient
+
+  return value, gradient
+
 
 def ackley_function_range(x_range_array):
   #returns an array of values for the given x range of values
