@@ -107,7 +107,10 @@ class NN_model:
         x = self.outs[-1]
         return self.loss_f(x, target)
 
-    def grad(self) -> np.ndarray:
+    def grad(self):
+        """Compute and store (by summing) the gradient of the weights
+        w.r.t. the last loss value computed.
+        """
         n_layers = len(self.weights)
 
         loss_grad = self.loss_f.grad
@@ -129,12 +132,12 @@ class NN_model:
         return self
 
     def get_grad(self):
-        # return gradient on weights
+        """Return the currently stored gradient."""
         total_gradient = [Dw.flatten() for Dw in self.D_weights]
         total_gradient = np.concatenate(total_gradient)
         return total_gradient
 
     def zero_grad(self):
-        # set the gradient to zero
+        """Set the stored gradient to zero."""
         for D_w in self.D_weights:
             D_w.fill(0.0)
