@@ -16,4 +16,4 @@ if __name__ == '__main__':
     print(f"Last gradient was: {solver.g}")
     print('')
 
-    #LBFGS_2D(ackley, [2,3])
+    LBFGS_2D(ackley, [2,3.1])
