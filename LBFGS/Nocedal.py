@@ -41,7 +41,7 @@ class NocedalAlgorithm:
         return new_d
 
     def save(self, new_s, new_y, new_rho):
-        self.saved_s.append(new_s)
+    self.saved_s.append(new_s)
         self.saved_y.append(new_y)
         self.saved_rho.append(new_rho)
 

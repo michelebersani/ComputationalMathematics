@@ -16,6 +16,8 @@ class LBFGS:
         m2: float = 0.9,
         tau: float = 0.9,
         alpha0: float = 1,
+        caution_thresh = 0.01,
+        caution_alpha = 0.5,
         mina: float = 1e-16,
     ):
         """Limited-memory BFGS (quasi-Newton method).
@@ -115,7 +117,10 @@ class LBFGS:
             return "1/rho too small: y*s < 1e-16"
 
         rho = 1 / inv_rho
-        self.nocedal.save(s, y, rho)
+
+        #Cautious update of B imposes this check. If fails just skip and proceed with old B
+        if np.dot(s,y)/np.dot(s,s) >= self.caution_thresh * (np.norm(new_g) ** self.caution_alpha)
+            self.nocedal.save(s, y, rho)
 
         self.x = self.new_x
         self.g = self.new_g
