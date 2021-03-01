@@ -17,7 +17,7 @@ class LBFGS:
         tau: float = 0.9,
         alpha0: float = 1,
         caution_thresh = 0.01,
-        caution_alpha = 0.5,
+        caution_alpha = 1,
         mina: float = 1e-16,
     ):
         """Limited-memory BFGS (quasi-Newton method).
@@ -54,6 +54,8 @@ class LBFGS:
         self.m2 = m2
         self.tau = tau
         self.alpha0 = 1
+        self.caution_thresh = caution_thresh
+        self.caution_alpha = caution_alpha
         self.mina = mina
 
         self.f = None
@@ -72,7 +74,7 @@ class LBFGS:
 
         status = None
         ### log infos header
-        row = ["AW LS iters [0]", "AW LS iters [1]", "alpha", "f value"]
+        row = ["AW LS iters [0]", "AW LS iters [1]", "alpha", "f value", "g norm"]
         _log_infos(row)
         ###
         while status is None:
@@ -107,19 +109,21 @@ class LBFGS:
         row = [lsiter[0], lsiter[1]]
         row.append(f"{alpha:6.4f}")
         row.append(f"{self.f_value:1.3E}")
+        row.append(f"{ng}")
         _log_infos(row)
         ###
 
         s = self.new_x - self.x
         y = self.new_g - self.g
         inv_rho = np.dot(y, s)
-        if inv_rho < 1e-16:
+        if inv_rho < 1e-22:
             return "1/rho too small: y*s < 1e-16"
 
         rho = 1 / inv_rho
 
+        norm_g = np.linalg.norm(self.new_g)
         #Cautious update of B imposes this check. If fails just skip and proceed with old B
-        if np.dot(s,y)/np.dot(s,s) >= self.caution_thresh * (np.norm(new_g) ** self.caution_alpha)
+        if inv_rho/np.dot(s,s) >= self.caution_thresh * (norm_g ** self.caution_alpha):
             self.nocedal.save(s, y, rho)
 
         self.x = self.new_x
@@ -158,5 +162,5 @@ class LBFGS:
 
 
 def _log_infos(row):
-    string = "{: >15} {: >15} {: >15} {: >15}".format(*row)
+    string = "{: >15} {: >15} {: >15} {: >15} {:15}".format(*row)
     logging.info(string)
