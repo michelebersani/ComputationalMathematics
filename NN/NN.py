@@ -118,8 +118,7 @@ class NN_model:
 
         # loop in reverse, up to first hidden layer (excluded)
         for i in reversed(range(1, n_layers)):
-            g = self.D_outs[i]
-            g = g * self.activ_fs[i].grad
+            g = self.D_outs[i] * self.activ_fs[i].grad
             self.D_weights[i] += np.outer(g, self.outs[i - 1])
             # remove bias column and transpose
             wT = self.weights[i][:, :-1].transpose()
