@@ -53,7 +53,7 @@ class LBFGS:
         self.m1 = m1
         self.m2 = m2
         self.tau = tau
-        self.alpha0 = 1
+        self.alpha0 = alpha0
         self.caution_thresh = caution_thresh
         self.caution_alpha = caution_alpha
         self.mina = mina
@@ -125,6 +125,8 @@ class LBFGS:
         #Cautious update of B imposes this check. If fails just skip and proceed with old B
         if inv_rho/np.dot(s,s) >= self.caution_thresh * (norm_g ** self.caution_alpha):
             self.nocedal.save(s, y, rho)
+        else:
+            logging.info("--- skipped B update!")
 
         self.x = self.new_x
         self.g = self.new_g
