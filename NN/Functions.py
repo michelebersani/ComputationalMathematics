@@ -5,7 +5,11 @@ class ActivFunction():
         raise NotImplementedError
 
 class LossFunction():
-    def __call__(self, x:np.ndarray, y:np.ndarray)->np.ndarray:
+    def __call__(self, x:np.ndarray, y:np.ndarray)->float:
+        raise NotImplementedError
+
+class RegLossFunction():
+    def __call__(self, weights:np.ndarray)->float:
         raise NotImplementedError
 
 
@@ -16,24 +20,29 @@ class Identity(ActivFunction):
 
 class Sigmoid(ActivFunction):
     def __call__(self, x:np.ndarray)->np.ndarray:
-        out = 1/(1+np.exp(-x))
+        x_clipped = np.clip(x,-100, 100)
+        out = 1/(1+np.exp(-x_clipped))
         self.grad = out*(1-out)
         return out-0.5
 
 class MSE(LossFunction):
-    def __call__(self, x:np.ndarray, y:np.ndarray)->np.ndarray:
+    def __call__(self, x:np.ndarray, y:np.ndarray)->float:
         self.grad = 2*(x-y)
         return ((y-x)**2).sum()
 
-# regularization functions
-# they return directly the gradient component
-# equivalent to adding a regularization term to the loss
+class L1_reg(RegLossFunction):
+    def __init__(self, alpha:float):
+        self.alpha = alpha
 
-def L1_reg(alpha:float, weights:np.ndarray)->np.ndarray:
-    grad = np.ones_like(weights)
-    grad[weights < 0] = -1
-    return grad*alpha
+    def __call__(self, weights:np.ndarray)->float:
+        self.grad = np.ones_like(weights)
+        self.grad[weights < 0] = -1
+        return self.alpha*np.linalg.norm(weights,ord=1)
 
-def L2_reg(alpha:float, weights:np.ndarray)->np.ndarray:
-    grad = weights*alpha
-    return grad
+class L2_reg(RegLossFunction):
+    def __init__(self, alpha:float):
+        self.alpha = alpha
+
+    def __call__(self, weights:np.ndarray)->float:
+        self.grad = weights*self.alpha
+        return self.alpha*np.linalg.norm(weights)
