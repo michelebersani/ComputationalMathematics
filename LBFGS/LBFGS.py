@@ -74,7 +74,7 @@ class LBFGS:
 
         status = None
         ### log infos header
-        row = ["AW LS iters [0]", "AW LS iters [1]", "alpha", "f value", "g norm"]
+        row = ["AW LS [0]", "AW LS [1]", "alpha", "f value", "g norm","s norm", "f_evals"]
         _log_infos(row)
         ###
         while status is None:
@@ -105,19 +105,22 @@ class LBFGS:
             return "AW line-search could not find a point"
         alpha, self.f_value, lsiter = AW_result
 
+        s = self.new_x - self.x
+        ns = np.linalg.norm(s)
+        y = self.new_g - self.g
+        inv_rho = np.dot(y, s)
+        if inv_rho < self.eps**2:
+            return f"1/rho too small: y*s < {self.eps**2:1.3E}"
+
         ### log infos
         row = [lsiter[0], lsiter[1]]
         row.append(f"{alpha:6.4f}")
         row.append(f"{self.f_value:1.3E}")
-        row.append(f"{ng}")
+        row.append(f"{ng:1.3E}")
+        row.append(f"{ns:1.3E}")
+        row.append(f"{self.feval}")
         _log_infos(row)
         ###
-
-        s = self.new_x - self.x
-        y = self.new_g - self.g
-        inv_rho = np.dot(y, s)
-        if inv_rho < 1e-22:
-            return "1/rho too small: y*s < 1e-16"
 
         rho = 1 / inv_rho
 
@@ -164,5 +167,5 @@ class LBFGS:
 
 
 def _log_infos(row):
-    string = "{: >15} {: >15} {: >15} {: >15} {:15}".format(*row)
+    string = "{: >10} {: >10} {: >10} {: >10} {: >10} {: >10} {: >10}".format(*row)
     logging.info(string)
