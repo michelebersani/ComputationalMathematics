@@ -41,23 +41,33 @@ else:
     # set level to WARNING to avoid printing INFOs
     logging.basicConfig(level='INFO')
 
-    f = Model_Wrapper(model, X_data, Y_scaled)
+    reg_loss = L1_reg(1e-5)
+    f = Model_Wrapper(model, X_data, Y_scaled, reg_loss)
 
     if test_smooth:
         base_bound = 1
         bound_decay = 10
         max_iter = 200
         loops = 2
+        max_iter = [max_iter]*loops
     else:
         base_bound = 0.5
         bound_decay = 1
-        max_iter = 500
-        loops = 2
+        max_iter = [500, 500, 500, 500, 500, 500, 500, 500, 1000]
+        loops = len(max_iter)
+    print(
+        "\nConfiguration:",
+        f"""
+        base_bound = {base_bound}
+        bound_decay = {bound_decay}
+        max_iter = {max_iter}
+        loops = {loops}
+        """
+    )
 
     for i in range(loops):
         bound = base_bound / (bound_decay ** i)
-        print(bound)
-        solver = LevelMethod(bounds=bound, lambda_=0.29289, epsilon=0.01, max_iter=max_iter * (1+i), memory=None)
+        solver = LevelMethod(bounds=bound, lambda_=0.29289, epsilon=0.01, max_iter=max_iter[i], memory=None)
         x = model.Weights
         status = solver.solve(f,x)
         model.Weights = solver.x_upstar
