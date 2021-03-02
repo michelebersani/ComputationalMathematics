@@ -14,6 +14,12 @@ class Identity(ActivFunction):
         self.grad = np.ones_like(x)
         return x
 
+class ReLU(ActivFunction):
+    def __call__(self, x:np.ndarray)->np.ndarray:
+        out = np.where(x > 0, x, 0.)
+        self.grad = np.where(x > 0., 1., np.where(x == 0, 0.5, 0.))
+        return out
+
 class Sigmoid(ActivFunction):
     def __call__(self, x:np.ndarray)->np.ndarray:
         out = 1/(1+np.exp(-x))
