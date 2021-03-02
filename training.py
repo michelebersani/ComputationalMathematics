@@ -20,7 +20,7 @@ if __name__ == "__main__":
     Y_scaler = StandardScaler()
     Y_scaled = Y_scaler.fit_transform(Y_data)
 
-    # np.random.seed(10)
+    np.random.seed(10)
     model = NN_model([10, 50, 50, 2], Sigmoid, MSE)
     model.init_weights()
 
