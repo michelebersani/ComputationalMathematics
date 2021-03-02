@@ -121,9 +121,8 @@ class LBFGS:
 
         rho = 1 / inv_rho
 
-        norm_g = np.linalg.norm(self.new_g)
         #Cautious update of B imposes this check. If fails just skip and proceed with old B
-        if inv_rho/np.dot(s,s) >= self.caution_thresh * (norm_g ** self.caution_alpha):
+        if inv_rho/np.dot(s,s) >= self.caution_thresh * (ng ** self.caution_alpha):
             self.nocedal.save(s, y, rho)
 
         self.x = self.new_x
