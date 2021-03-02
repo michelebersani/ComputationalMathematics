@@ -21,7 +21,7 @@ if __name__ == '__main__':
     Y_scaled = Y_scaler.fit_transform(Y_data)
 
     np.random.seed(10)
-    model = NN_model([10, 20, 20, 2], Sigmoid, MSE)
+    model = NN_model([10, 50, 50, 2], Sigmoid, MSE)
     model.init_weights()
 
     # set level to WARNING to avoid printing INFOs
