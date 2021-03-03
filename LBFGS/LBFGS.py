@@ -12,7 +12,7 @@ class LBFGS:
         delta: float = 1,
         eps: float = 1e-10,
         max_feval: int = 1000,
-        m1: float = 0.0001,
+        m1: float = 1e-4,
         m2: float = 0.9,
         tau: float = 0.9,
         alpha0: float = 1,
