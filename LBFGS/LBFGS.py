@@ -74,7 +74,7 @@ class LBFGS:
 
         status = None
         ### log infos header
-        row = ["AW LS [0]", "AW LS [1]", "alpha", "f value", "g norm","s norm", "f_evals"]
+        row = ["AW LS [0]", "AW LS [1]", "AW LS [2]", "alpha", "f value", "g norm","s norm", "f_evals"]
         _log_infos(row)
         ###
         while status is None:
@@ -103,7 +103,7 @@ class LBFGS:
         AW_result = self.AW_line_search(d, phi0, phip0)
         if AW_result is None:
             return "AW line-search could not find a point"
-        alpha, self.f_value, lsiter = AW_result
+        lsiter, alpha, self.f_value = AW_result
 
         s = self.new_x - self.x
         ns = np.linalg.norm(s)
@@ -113,7 +113,7 @@ class LBFGS:
             return f"1/rho too small: y*s < {self.eps**2:1.3E}"
 
         ### log infos
-        row = [lsiter[0], lsiter[1]]
+        row = [lsiter[0], lsiter[1], lsiter[2]]
         row.append(f"{alpha:6.4f}")
         row.append(f"{self.f_value:1.3E}")
         row.append(f"{ng:1.3E}")
@@ -134,37 +134,119 @@ class LBFGS:
         self.g = self.new_g
 
     def AW_line_search(self, d, phi0, phip0):
-        lsiter = [0, 0]  # count iterations of phase 0 and 1
-        phase = 0
-        alpha = self.alpha0
+        lsiter = [0, 0, 0]  # count iterations of each phase
+        alpha_max = self.alpha0
+
+        # - - - - PHASE 1 - - - - - -
         while self.feval < self.max_feval:
             self.feval += 1
-            lsiter[phase] += 1
+            lsiter[0] += 1
             # set new candidate point
-            self.new_x = self.x + alpha * d
+            self.new_x = self.x + alpha_max * d
             # values for line search
             phia, self.new_g = self.f.function(self.new_x)
             phipa = np.dot(self.new_g, d)
             # AW conditions
-            armijo = phia <= phi0 + self.m1 * alpha * phip0
+            armijo = phia <= phi0 + self.m1 * alpha_max * phip0
             wolfe = abs(phipa) <= -self.m2 * phip0
             if armijo and wolfe:
-                return alpha, phia, lsiter
-            # update alpha
-            alpha = alpha / self.tau if phase == 0 else alpha * self.tau
+                return lsiter, alpha_max, phia
+            # update alpha_max
+            alpha_max = alpha_max / self.tau
+        
+            # if derivative is positive or Armijo fails, skip to PHASE 2
+            if phipa > 0 or not armijo:
+                break
+        
+        alpha_i = 0.1 * self.alpha0 #set alpha_i in (0, alpha_max)
+        old_alpha = 0
+        old_phia = None
 
-            # if derivative is positive, start phase 1
-            if phase == 0 and phipa >= 0:
-                phase = 1
-                alpha = self.alpha0 * self.tau
+        zoom_result = self.AW_zoom(d, phi0, phip0, 0, alpha_max, phi0)
+        if zoom_result is None:
+            return None
+        lsiter[2], alpha_j, phia = zoom_result
+        return lsiter, alpha_j, phia
 
-            if alpha < self.mina:
+        # - - - - PHASE 2 - - - - - -
+        while self.feval < self.max_feval:
+            self.feval += 1
+            lsiter[1] += 1
+            
+            # set new candidate point
+            self.new_x = self.x + alpha_i * d
+            # values for line search
+            phia, self.new_g = self.f.function(self.new_x)
+            phipa = np.dot(self.new_g, d)
+            # AW conditions
+            armijo = phia <= phi0 + self.m1 * alpha_i * phip0
+            wolfe = abs(phipa) <= -self.m2 * phip0
+
+            if armijo and wolfe:
+                return lsiter, alpha_i, phia
+
+            if (not armijo) or (old_phia is not None and phia >= old_phia):
+                zoom_result = self.AW_zoom(d, phi0, phip0, old_alpha, alpha_i, old_phia)
+                if zoom_result is None:
+                    return None
+                lsiter[2], alpha_j, phia = zoom_result
+                return lsiter, alpha_j, phia
+
+
+            if phipa >= 0:
+                zoom_result = self.AW_zoom(d, phi0, phip0, alpha_i, old_alpha, phia)
+                if zoom_result is None:
+                    return None
+                lsiter[2], alpha_j, phia = zoom_result
+                return lsiter, alpha_j, phia
+
+            if alpha_max - alpha_i < self.mina:
                 return None
+
+            alpha_i = (alpha_i + alpha_max)/ 2
+
+            old_alpha = alpha_i
+            old_phia = phia
+
+        # No point found! D:
+        return None
+
+    def AW_zoom(self, d, phi0, phip0, alpha_low, alpha_high, phi_low):
+        lsiter = 0  # count iterations of current phase
+        while self.feval < self.max_feval:
+            lsiter += 1
+            self.feval += 1
+            
+            # set new candidate point
+            alpha_j = (alpha_high + alpha_low) * 0.5
+            self.new_x = self.x + alpha_j * d
+            # values for line search
+            phia, self.new_g = self.f.function(self.new_x)
+            phipa = np.dot(self.new_g, d)
+            # AW conditions
+            armijo = phia <= phi0 + self.m1 * alpha_j * phip0
+            wolfe = abs(phipa) <= -self.m2 * phip0
+
+            if armijo and wolfe:
+                return lsiter, alpha_j, phia
+            
+            print(phia - phi_low, alpha_j-alpha_low, phipa)
+
+            if not armijo or phia >= phi_low:
+                print("alpha_high <- alpha_j")
+                alpha_high = alpha_j
+            else:
+                if phipa*(alpha_high-alpha_low) >= 0:
+                    alpha_high = alpha_low
+                    print("alpha_high <- alpha_low")
+                alpha_low = alpha_j
+                print("alpha_low <- alpha_j")
+                phi_low = phia
 
         # No point found! D:
         return None
 
 
 def _log_infos(row):
-    string = "{: >10} {: >10} {: >10} {: >10} {: >10} {: >10} {: >10}".format(*row)
+    string = "{: >10} {: >10} {: >10} {: >10} {: >10} {: >10} {: >10} {: >10}".format(*row)
     logging.info(string)

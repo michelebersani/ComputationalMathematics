@@ -29,7 +29,7 @@ if __name__ == "__main__":
     # set level to WARNING to avoid printing INFOs
     logging.basicConfig(level="INFO")
 
-    solver = LBFGS(max_feval=200000, M=1000)
+    solver = LBFGS(max_feval=2000, M=1000)
     f = Model_Wrapper(model, X_data, Y_scaled, reg_loss)
     x = model.Weights
     status = solver.solve(f, x)
