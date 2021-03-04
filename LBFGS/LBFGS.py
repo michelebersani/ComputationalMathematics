@@ -18,7 +18,6 @@ class LBFGS:
         alpha0: float = 1,
         caution_thresh = 0.01,
         caution_alpha = 1,
-        mina: float = 1e-16,
     ):
         """Limited-memory BFGS (quasi-Newton method).
 
@@ -33,7 +32,6 @@ class LBFGS:
             m2 (float, optional): parameter for Wolfe's condition. Defaults to 0.9.
             tau (float, optional): Exponential factor for line-search. Defaults to 0.9.
             alpha0 (float, optional): Initial factor for line-search. Defaults to 1.
-            mina (float, optional): Min factor for line-search. Defaults to 1e-16.
 
         Examples
         --------
@@ -56,7 +54,6 @@ class LBFGS:
         self.alpha0 = alpha0
         self.caution_thresh = caution_thresh
         self.caution_alpha = caution_alpha
-        self.mina = mina
 
         self.f = None
         self.x = None
@@ -74,7 +71,7 @@ class LBFGS:
 
         status = None
         ### log infos header
-        row = ["AW LS [0]", "AW LS [1]", "AW LS [2]", "alpha", "f value", "g norm","s norm", "f_evals"]
+        row = ["step_size", "f value", "g norm","s norm", "f_evals"]
         _log_infos(row)
         ###
         while status is None:
@@ -103,17 +100,17 @@ class LBFGS:
         AW_result = self.AW_line_search(d, phi0, phip0)
         if AW_result is None:
             return "AW line-search could not find a point"
-        lsiter, alpha, self.f_value = AW_result
+        alpha, self.f_value = AW_result
 
         s = self.new_x - self.x
         ns = np.linalg.norm(s)
         y = self.new_g - self.g
         inv_rho = np.dot(y, s)
-        if inv_rho < self.eps**2:
-            return f"1/rho too small: y*s < {self.eps**2:1.3E}"
+        if inv_rho < self.eps**2*1e-2:
+            return f"1/rho too small: y*s < {self.eps**2*1e-2:1.3E}"
 
         ### log infos
-        row = [lsiter[0], lsiter[1], lsiter[2]]
+        row = []
         row.append(f"{alpha:6.4f}")
         row.append(f"{self.f_value:1.3E}")
         row.append(f"{ng:1.3E}")
@@ -134,45 +131,13 @@ class LBFGS:
         self.g = self.new_g
 
     def AW_line_search(self, d, phi0, phip0):
-        lsiter = [0, 0, 0]  # count iterations of each phase
-        alpha_max = self.alpha0
-
-        # - - - - PHASE 1 - - - - - -
-        while self.feval < self.max_feval:
-            self.feval += 1
-            lsiter[0] += 1
-            # set new candidate point
-            self.new_x = self.x + alpha_max * d
-            # values for line search
-            phia, self.new_g = self.f.function(self.new_x)
-            phipa = np.dot(self.new_g, d)
-            # AW conditions
-            armijo = phia <= phi0 + self.m1 * alpha_max * phip0
-            wolfe = abs(phipa) <= -self.m2 * phip0
-            if armijo and wolfe:
-                return lsiter, alpha_max, phia
-            # update alpha_max
-            alpha_max = alpha_max / self.tau
-        
-            # if derivative is positive or Armijo fails, skip to PHASE 2
-            if phipa > 0 or not armijo:
-                break
-        
-        alpha_i = 0.1 * self.alpha0 #set alpha_i in (0, alpha_max)
+        alpha_max = 1e3
+        alpha_i = 1
         old_alpha = 0
-        old_phia = None
+        old_phia = phi0
 
-        zoom_result = self.AW_zoom(d, phi0, phip0, 0, alpha_max, phi0)
-        if zoom_result is None:
-            return None
-        lsiter[2], alpha_j, phia = zoom_result
-        return lsiter, alpha_j, phia
-
-        # - - - - PHASE 2 - - - - - -
         while self.feval < self.max_feval:
             self.feval += 1
-            lsiter[1] += 1
-            
             # set new candidate point
             self.new_x = self.x + alpha_i * d
             # values for line search
@@ -183,27 +148,19 @@ class LBFGS:
             wolfe = abs(phipa) <= -self.m2 * phip0
 
             if armijo and wolfe:
-                return lsiter, alpha_i, phia
+                return alpha_i, phia
 
-            if (not armijo) or (old_phia is not None and phia >= old_phia):
-                zoom_result = self.AW_zoom(d, phi0, phip0, old_alpha, alpha_i, old_phia)
-                if zoom_result is None:
-                    return None
-                lsiter[2], alpha_j, phia = zoom_result
-                return lsiter, alpha_j, phia
+            if not armijo or phia > old_phia:
+                return self.AW_zoom(d, phi0, phip0, old_alpha, alpha_i, old_phia)
 
+            # at this point, alpha_i satisfies armijo but has phipa too big in abs
+            if phipa > 0:
+                return self.AW_zoom(d, phi0, phip0, alpha_i, old_alpha, phia)
 
-            if phipa >= 0:
-                zoom_result = self.AW_zoom(d, phi0, phip0, alpha_i, old_alpha, phia)
-                if zoom_result is None:
-                    return None
-                lsiter[2], alpha_j, phia = zoom_result
-                return lsiter, alpha_j, phia
+            alpha_i = alpha_i*1.5
 
-            if alpha_max - alpha_i < self.mina:
+            if alpha_i > alpha_max:
                 return None
-
-            alpha_i = (alpha_i + alpha_max)/ 2
 
             old_alpha = alpha_i
             old_phia = phia
@@ -212,11 +169,8 @@ class LBFGS:
         return None
 
     def AW_zoom(self, d, phi0, phip0, alpha_low, alpha_high, phi_low):
-        lsiter = 0  # count iterations of current phase
         while self.feval < self.max_feval:
-            lsiter += 1
             self.feval += 1
-            
             # set new candidate point
             alpha_j = (alpha_high + alpha_low) * 0.5
             self.new_x = self.x + alpha_j * d
@@ -228,19 +182,16 @@ class LBFGS:
             wolfe = abs(phipa) <= -self.m2 * phip0
 
             if armijo and wolfe:
-                return lsiter, alpha_j, phia
+                return alpha_j, phia
             
-            print(phia - phi_low, alpha_j-alpha_low, phipa)
+            #print(phia - phi_low, alpha_j-alpha_low, phipa)
 
-            if not armijo or phia >= phi_low:
-                print("alpha_high <- alpha_j")
+            if not armijo or phia > phi_low:
                 alpha_high = alpha_j
             else:
-                if phipa*(alpha_high-alpha_low) >= 0:
+                if phipa*(alpha_high-alpha_low) > 0:
                     alpha_high = alpha_low
-                    print("alpha_high <- alpha_low")
                 alpha_low = alpha_j
-                print("alpha_low <- alpha_j")
                 phi_low = phia
 
         # No point found! D:
@@ -248,5 +199,5 @@ class LBFGS:
 
 
 def _log_infos(row):
-    string = "{: >10} {: >10} {: >10} {: >10} {: >10} {: >10} {: >10} {: >10}".format(*row)
+    string = "{: >10} {: >10} {: >10} {: >10} {: >10}".format(*row)
     logging.info(string)

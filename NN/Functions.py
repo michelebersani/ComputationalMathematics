@@ -26,7 +26,8 @@ class ReLU(ActivFunction):
 
 class Sigmoid(ActivFunction):
     def __call__(self, x:np.ndarray)->np.ndarray:
-        x_clipped = np.clip(x,-100, 100)
+        # x_clipped = np.clip(x,-100, 100)
+        x_clipped = x
         out = 1/(1+np.exp(-x_clipped))
         self.grad = out*(1-out)
         return out-0.5
@@ -50,5 +51,5 @@ class L2_reg(RegLossFunction):
         self.alpha = alpha
 
     def __call__(self, weights:np.ndarray)->float:
-        self.grad = weights*self.alpha
-        return self.alpha*np.linalg.norm(weights)
+        self.grad = 2*weights*self.alpha
+        return self.alpha*np.linalg.norm(weights)**2
