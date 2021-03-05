@@ -14,7 +14,6 @@ class LBFGS:
         max_feval: int = 1000,
         m1: float = 1e-4,
         m2: float = 0.9,
-        tau: float = 0.9,
         alpha0: float = 1,
         caution_thresh = 0.01,
         caution_alpha = 1,
@@ -30,7 +29,6 @@ class LBFGS:
             max_feval (int, optional): Max number of f evaluations. Defaults to 1000.
             m1 (float, optional): parameter for Armijo's condition. Defaults to 0.0001.
             m2 (float, optional): parameter for Wolfe's condition. Defaults to 0.9.
-            tau (float, optional): Exponential factor for line-search. Defaults to 0.9.
             alpha0 (float, optional): Initial factor for line-search. Defaults to 1.
 
         Examples
@@ -46,11 +44,11 @@ class LBFGS:
         self.M = M
         self.delta = delta
         self.eps = eps
+        self.eps_g = None
         self.max_feval = max_feval
         self.feval = 0
         self.m1 = m1
         self.m2 = m2
-        self.tau = tau
         self.alpha0 = alpha0
         self.caution_thresh = caution_thresh
         self.caution_alpha = caution_alpha
@@ -83,7 +81,10 @@ class LBFGS:
         self.f_value, self.g = self.f.function(self.x)
 
         ng = np.linalg.norm(self.g)
-        if ng <= self.eps:
+
+        if self.eps_g is None:
+            self.eps_g = self.eps*ng
+        if ng <= self.eps_g:
             return "optimal"
 
         if self.feval > self.max_feval:
@@ -133,7 +134,7 @@ class LBFGS:
 
     def AW_line_search(self, d, phi0, phip0):
         alpha_max = 1e3
-        alpha_i = 1
+        alpha_i = self.alpha0
         old_alpha = 0
         old_phia = phi0
 
@@ -158,7 +159,7 @@ class LBFGS:
             if phipa > 0:
                 return self.AW_zoom(d, phi0, phip0, alpha_i, old_alpha, phia)
 
-            alpha_i = alpha_i*1.5
+            alpha_i = alpha_i*2
 
             if alpha_i > alpha_max:
                 return None
