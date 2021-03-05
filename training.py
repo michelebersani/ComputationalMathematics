@@ -10,8 +10,9 @@ from NN import NN_model, Sigmoid, MSE, L2_reg
 from NN.utility import batch_train, batch_out, Model_Wrapper
 from LBFGS import LBFGS
 
+
 data = pd.read_csv(shuffled_csv, index_col=0).to_numpy()
-data = data[:20, :]
+data = data[:100, :]
 n_samples = data.shape[0]
 X_data = data[:, :10]
 Y_data = data[:, 10:]
@@ -20,7 +21,7 @@ Y_scaler = StandardScaler()
 Y_scaled = Y_scaler.fit_transform(Y_data)
 
 np.random.seed(11)
-model = NN_model([10, 20, 20, 2], Sigmoid, MSE)
+model = NN_model([10, 50, 50, 2], Sigmoid, MSE)
 model.init_weights()
 reg_loss = L2_reg(1e-4)
 
@@ -28,8 +29,8 @@ reg_loss = L2_reg(1e-4)
 reload(logging) # needed for notebook
 logging.basicConfig(level="INFO")
 
-solver = LBFGS(eps=1e-4,max_feval=5e4,M=100)
-f = Model_Wrapper(model, X_data, Y_scaled, reg_loss)
+solver = LBFGS(eps=1e-4,max_feval=5e4,M=20,m1=1e-1,m2=0.4)
+f = Model_Wrapper(model, X_data, Y_scaled, reg_loss).function
 x = model.Weights
 status = solver.solve(f, x)
 print("")

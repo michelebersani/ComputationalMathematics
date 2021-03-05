@@ -10,7 +10,7 @@ class LBFGS:
         self,
         M: int = 20,
         delta: float = 1,
-        eps: float = 1e-10,
+        eps: float = 1e-5,
         max_feval: int = 1000,
         m1: float = 1e-4,
         m2: float = 0.9,
@@ -24,8 +24,8 @@ class LBFGS:
             M (int, optional): Memory amount. Defaults to 20.
             delta (float, optional): approximation of inverse H is initialized
                 as `I*delta`. Defaults to 1.
-            eps (float, optional): the algorithm stops when
-                `||gradient|| < eps`. Defaults to 1e-10.
+            eps (float, optional): the algorithm stops when (w.r.t. the first iteration)
+                the norm of the gradient has diminished by a factor `eps`.
             max_feval (int, optional): Max number of f evaluations. Defaults to 1000.
             m1 (float, optional): parameter for Armijo's condition. Defaults to 0.0001.
             m2 (float, optional): parameter for Wolfe's condition. Defaults to 0.9.
@@ -33,7 +33,7 @@ class LBFGS:
 
         Examples
         --------
-        `f` must be an object that implements a `f.function(x)` method returning `(v,g)`,
+        `f` must be callable such that `f(x)` returns `(v,g)`,
         where `v` and `g` are respectively the value and the gradient of `f` in `x`.
         The `x` and the gradient must be `numpy.ndarray`.
         >>> solver = LBFGS()
@@ -78,7 +78,7 @@ class LBFGS:
         return status
 
     def step(self):
-        self.f_value, self.g = self.f.function(self.x)
+        self.f_value, self.g = self.f(self.x)
 
         ng = np.linalg.norm(self.g)
 
@@ -143,7 +143,7 @@ class LBFGS:
             # set new candidate point
             self.new_x = self.x + alpha_i * d
             # values for line search
-            phia, self.new_g = self.f.function(self.new_x)
+            phia, self.new_g = self.f(self.new_x)
             phipa = np.dot(self.new_g, d)
             # AW conditions
             armijo = phia <= phi0 + self.m1 * alpha_i * phip0
@@ -177,7 +177,7 @@ class LBFGS:
             alpha_j = (alpha_high + alpha_low) * 0.5
             self.new_x = self.x + alpha_j * d
             # values for line search
-            phia, self.new_g = self.f.function(self.new_x)
+            phia, self.new_g = self.f(self.new_x)
             phipa = np.dot(self.new_g, d)
             # AW conditions
             armijo = phia <= phi0 + self.m1 * alpha_j * phip0
