@@ -63,10 +63,10 @@ class LBFGS:
     def solve(self, f, x):
         self.f = f
         self.x = x
+        self.f_value, self.g = self.f(self.x)
         n = len(x)
         B_0 = np.repeat(self.delta, n)
         self.nocedal = NocedalAlgorithm(self.M, B_0)
-
         status = None
         ### log infos header
         row = ["step_size", "f value","delta f_v", "g norm", "f_evals"]
@@ -78,8 +78,6 @@ class LBFGS:
         return status
 
     def step(self):
-        self.f_value, self.g = self.f(self.x)
-
         ng = np.linalg.norm(self.g)
 
         if self.eps_g is None:
