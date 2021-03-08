@@ -14,7 +14,7 @@ class Model_Wrapper:
         self.Y = Y
         self.reg_loss = reg_loss
 
-    def function(self, weights: np.ndarray):
+    def __call__(self, weights: np.ndarray):
         self.model.Weights = weights
         self.model.zero_grad()
         loss = batch_train(self.model, self.X, self.Y) + self.reg_loss(weights)
