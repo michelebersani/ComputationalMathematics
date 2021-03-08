@@ -37,7 +37,7 @@ def multi_run(solver, f, x, type='scipy', n=10):
                 n_failures += 1
             else:
                 final_fv.append(solver.f_value)
-                f_evals.append(solver.f_evals)
+                f_evals.append(solver.feval)
 
         elif type == 'LevelMethod':
             raise NotImplementedError
