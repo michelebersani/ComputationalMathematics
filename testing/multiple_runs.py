@@ -2,7 +2,7 @@ from scipy.optimize import minimize
 import time
 import numpy as np
 
-def multi_run(solver, f, x, type='scipy', n=10):
+def multi_run(solver, f, x, n=10, type=None):
     """Run the solver `n` times, and return a list containing:
     - final f value (mean)
     - final f value (std)
@@ -12,9 +12,9 @@ def multi_run(solver, f, x, type='scipy', n=10):
     - seconds (std)
     - number of failures
 
-    Argument `type` must be one of the following: 'scipy', 'LBFGS', 'LevelMethod'
+    Argument `type` must be None if you use a local algorithm, otherwise 'scipy'
     """
-    if type == 'scipy':
+    if type is not None:
         return _multi_run_scipy(solver, f, x, n)
     else:
         return _multi_run_local(solver, f, x, n)
