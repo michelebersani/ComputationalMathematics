@@ -185,8 +185,6 @@ class LBFGS:
 
             if armijo and wolfe:
                 return alpha_j, phia
-            
-            #print(phia - phi_low, alpha_j-alpha_low, phipa)
 
             if not armijo or phia > phi_low:
                 alpha_high = alpha_j
