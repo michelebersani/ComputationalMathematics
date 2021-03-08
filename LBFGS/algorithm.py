@@ -60,7 +60,7 @@ class LBFGS:
         self.new_x = None
         self.new_g = None
 
-    def solve(self, f, x):
+    def __call__(self, f, x):
         self.f = f
         self.x = x
         self.f_value, self.g = self.f(self.x)
