@@ -2,7 +2,7 @@ from scipy.optimize import minimize
 import time
 import numpy as np
 
-def multi_run(solver, f, x, n=10, type=None):
+def multi_run(solver, f, n=10, type=None):
     """Run the solver `n` times, and return a list containing:
     - final f value (mean)
     - final f value (std)
@@ -15,18 +15,21 @@ def multi_run(solver, f, x, n=10, type=None):
     Argument `type` must be None if you use a local algorithm, otherwise 'scipy'
     """
     if type is not None:
-        return _multi_run_scipy(solver, f, x, n)
+        return _multi_run_scipy(solver, f, n)
     else:
-        return _multi_run_local(solver, f, x, n)
+        return _multi_run_local(solver, f, n)
 
 
-def _multi_run_scipy(solver, f, x, n=10):
+def _multi_run_scipy(solver, f, n=10):
     final_fv = []
     f_evals = []
     seconds = []
     n_failures = 0
 
     for _ in range(n):
+        # set starting x
+        f.model.init_weights()
+        x = f.model.Weights
         start_time = time.process_time()
         solver_out = solver(f, x)
         delta_s = time.process_time() - start_time
@@ -51,15 +54,18 @@ def _multi_run_scipy(solver, f, x, n=10):
     )
 
 
-def _multi_run_local(solver, f, x, n=10):
+def _multi_run_local(solver, f, n=10):
     final_fv = []
     f_evals = []
     seconds = []
     n_failures = 0
 
     for _ in range(n):
+        # set starting x
+        f.model.init_weights()
+        x = f.model.Weights
         start_time = time.process_time()
-        solver_out = solver(f, x)
+        solver_out = solver.solve(f, x)
         delta_s = time.process_time() - start_time
 
         if solver_out != "optimal":
