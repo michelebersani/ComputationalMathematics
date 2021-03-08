@@ -111,7 +111,6 @@ class LBFGS:
         _log_infos(row)
         ###
         
-        self.f_value = new_f_value
         # update B matrix
         s = self.new_x - self.x
         y = self.new_g - self.g
@@ -129,6 +128,7 @@ class LBFGS:
 
         self.x = self.new_x
         self.g = self.new_g
+        self.f_value = new_f_value
 
     def AW_line_search(self, d, phi0, phip0):
         alpha_max = 1e3
