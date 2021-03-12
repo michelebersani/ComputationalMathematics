@@ -44,6 +44,7 @@ class L1_reg(RegLossFunction):
     def __call__(self, weights:np.ndarray)->float:
         self.grad = np.ones_like(weights)
         self.grad[weights < 0] = -1
+        self.grad *= self.alpha
         return self.alpha*np.linalg.norm(weights,ord=1)
 
 class L2_reg(RegLossFunction):
