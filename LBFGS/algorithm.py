@@ -114,17 +114,15 @@ class LBFGS:
         ###
         
         # update B matrix
+        # modified LBFGS: t = C*ng**mu; y += t*s; refer to
+        # 'Global Convergence of a Modified Limited Memory BFGS Method for Non-convex Minimization' by Xiao et al.
         s = self.new_x - self.x
         y = self.new_g - self.g
+        y += (self.C*ng**self.mu)*s
         inv_rho = np.dot(y, s)
         rho = 1 / inv_rho
         if inv_rho < self.eps**2*1e-2:
             return f"1/rho too small: y*s < {self.eps**2*1e-2:1.3E}"
-
-        # modified LBFGS: t = C*ng**mu; y += t*s; refer to
-        # Global Convergence of a Modified Limited Memory BFGS Method for Non-convex Minimization
-        # by Xiao at al.
-        y += (self.C*ng**self.mu)*s
         
         self.nocedal.save(s, y, rho)
 
