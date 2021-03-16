@@ -15,8 +15,8 @@ class LBFGS:
         m1: float = 1e-4,
         m2: float = 0.9,
         alpha0: float = 1,
-        caution_thresh = 0.01,
-        caution_alpha = 1,
+        C = 1e-7,
+        mu = 0
     ):
         """Limited-memory BFGS (quasi-Newton method).
 
@@ -50,8 +50,8 @@ class LBFGS:
         self.m1 = m1
         self.m2 = m2
         self.alpha0 = alpha0
-        self.caution_thresh = caution_thresh
-        self.caution_alpha = caution_alpha
+        self.C = C
+        self.mu = mu
 
         self.f = None
         self.x = None
@@ -117,16 +117,16 @@ class LBFGS:
         s = self.new_x - self.x
         y = self.new_g - self.g
         inv_rho = np.dot(y, s)
+        rho = 1 / inv_rho
         if inv_rho < self.eps**2*1e-2:
             return f"1/rho too small: y*s < {self.eps**2*1e-2:1.3E}"
 
-        rho = 1 / inv_rho
-
-        #Cautious update of B imposes this check. If fails just skip and proceed with old B
-        if inv_rho/np.dot(s,s) >= self.caution_thresh * (ng ** self.caution_alpha):
-            self.nocedal.save(s, y, rho)
-        else:
-            logging.info("--- skipped B update!")
+        # modified LBFGS: t = C*ng**mu; y += t*s; refer to
+        # Global Convergence of a Modified Limited Memory BFGS Method for Non-convex Minimization
+        # by Xiao at al.
+        y += (self.C*ng**self.mu)*s
+        
+        self.nocedal.save(s, y, rho)
 
         self.x = self.new_x
         self.g = self.new_g
