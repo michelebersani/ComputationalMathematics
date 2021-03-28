@@ -60,8 +60,6 @@ class LBFGS:
         self.new_x = None
         self.new_g = None
 
-        self.status = None
-
     def solve(self, f, x):
         self.f = f
         self.x = x
