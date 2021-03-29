@@ -32,10 +32,8 @@ class adam_SGD:
         v_t = np.zeros_like(x)
         self.f_value, self.g = f(x)
         ng = np.linalg.norm(self.g)
-        ng0 = 1  # un-scaled stopping criterion
-        if self.eps < 0:
-            ng0 = -ng
-
+        ng0 = ng
+        
         row = ["f value","delta f_v", "g norm", "f_evals"]
         _log_infos(row)
 
