@@ -1,0 +1,2 @@
+shape,lambda_,final_fv_m,final_fv_std,f_evals_m,f_evals_std,seconds_m,seconds_std,n_failures
+"[10, 5, 5, 2]",0.9,5.899347474430903,0.0,301.0,0.0,56.53125,0.0,0
