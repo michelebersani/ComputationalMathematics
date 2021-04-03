@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from .Nocedal import NocedalAlgorithm
 from .checks import check_input
 import logging
-
+import time
 
 class LBFGS:
     def __init__(
@@ -62,6 +62,7 @@ class LBFGS:
         self.new_g = None
 
     def solve(self, f, x):
+        start_time = time.time() 
         self.f = f
         self.x = x
         self.f_value, self.g = self.f(self.x)
@@ -75,6 +76,9 @@ class LBFGS:
         ###
         while status is None:
             status = self.step()
+
+        end_time = time.time()
+        self.runtime = end_time-start_time
 
         return status
 

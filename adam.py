@@ -27,6 +27,7 @@ class adam_SGD:
         self.feval = 0
         self.g = None
         self.f_value = None
+        self.runtime = None
         self.plot = plot
         self.verbose = verbose
     
@@ -89,7 +90,7 @@ class adam_SGD:
             self.plot_fvalues()
 
         end_time = time.time()
-        runtime = end_time-start_time
+        self.runtime = end_time-start_time
         if(self.verbose):
             print(f"\nRuntime: \t{runtime} seconds")
             print(f"f min reached: \t{min(self.f_values)}")
