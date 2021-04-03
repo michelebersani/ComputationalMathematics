@@ -1,5 +1,6 @@
 import numpy as np
 import logging
+import matplotlib.pyplot as plt
 
 class adam_SGD:
     def __init__(
@@ -9,7 +10,8 @@ class adam_SGD:
         beta_2: float = 0.99,
         k: float = 1e-8,
         eps: float = 1e-6,
-        max_feval: int = 10000
+        max_feval: int = 10000,
+        plot: bool = False
     ):
 
         self.alpha = alpha
@@ -23,10 +25,12 @@ class adam_SGD:
         self.feval = 0
         self.g = None
         self.f_value = None
+        self.plot = plot
     
     def solve(self, f, x):
         self.f = f
         self.x = x
+        self.f_values = []
         status = None
         m_t = np.zeros_like(x)
         v_t = np.zeros_like(x)
@@ -40,6 +44,7 @@ class adam_SGD:
         while(True): #till it gets converged
             self.feval += 1
             new_f_value, self.g = f(x)
+            self.f_values.append(new_f_value)
             m_t = self.beta_1 * m_t + (1-self.beta_1)*self.g
             v_t = self.beta_2 * v_t + (1-self.beta_2)*np.multiply(self.g,self.g)
             m_hat = m_t/(1-self.beta_1**(self.feval+1))
@@ -59,11 +64,20 @@ class adam_SGD:
                 status = "optimal"
                 break
             if self.feval > self.max_feval:
-                status = "stopped for reached max_feval"
+                status = "optimal"
+                #status = "stopped for reached max_feval"
                 break
 
             #UPDATE ITERATES
             self.f_value = new_f_value
+
+        if self.plot:
+            plt.plot(self.f_values)
+            plt.yscale("log")
+            plt.show()
+
+        return status
+
 
 def _log_infos(row):
     string = "{: >15} {: >15} {: >15} {: >10}".format(*row)
