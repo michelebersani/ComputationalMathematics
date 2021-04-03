@@ -1,6 +1,7 @@
 import numpy as np
 import logging
 import matplotlib.pyplot as plt
+import time
 
 class adam_SGD:
     def __init__(
@@ -11,7 +12,8 @@ class adam_SGD:
         k: float = 1e-8,
         eps: float = 1e-6,
         max_feval: int = 10000,
-        plot: bool = False
+        plot: bool = False,
+        verbose:bool = False
     ):
 
         self.alpha = alpha
@@ -26,8 +28,20 @@ class adam_SGD:
         self.g = None
         self.f_value = None
         self.plot = plot
+        self.verbose = verbose
     
+
+
+    def plot_fvalues(self):
+        plt.plot(self.f_values)
+        plt.yscale("log")
+        plt.xlabel("f evaluations")
+
+        plt.ylabel("Model Loss")
+        plt.show()
+
     def solve(self, f, x):
+        start_time = time.time() 
         self.f = f
         self.x = x
         self.f_values = []
@@ -72,10 +86,13 @@ class adam_SGD:
             self.f_value = new_f_value
 
         if self.plot:
-            plt.plot(self.f_values)
-            plt.yscale("log")
-            plt.show()
+            self.plot_fvalues()
 
+        end_time = time.time()
+        runtime = end_time-start_time
+        if(self.verbose):
+            print(f"\nRuntime: \t{runtime} seconds")
+            print(f"f min reached: \t{min(self.f_values)}")
         return status
 
 

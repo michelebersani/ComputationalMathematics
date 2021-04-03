@@ -57,6 +57,7 @@ class LBFGS:
         self.x = None
         self.g = None
         self.f_value = None
+        self.f_values = []
         self.new_x = None
         self.new_g = None
 
@@ -100,6 +101,7 @@ class LBFGS:
         if AW_result is None:
             return "AW line-search could not find a point"
         alpha, new_f_value = AW_result
+        self.f_values.append(new_f_value)
 
         ### log infos
         row = []

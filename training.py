@@ -27,8 +27,8 @@ reg_loss = L2_reg(0)
 
 # set level to WARNING to avoid printing INFOs
 logging.basicConfig(level="INFO")
-solver = adam_SGD()
-#solver = LBFGS(eps=1e-20,max_feval=5e4,M=200000)
+#solver = adam_SGD()
+solver = LBFGS(eps=1e-20,max_feval=5,M=200000)
 f = Model_Wrapper(model, X_data, Y_scaled, reg_loss)
 x = model.Weights
 status = solver.solve(f, x)
