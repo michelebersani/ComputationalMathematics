@@ -13,7 +13,17 @@ class LevelMethodMaxIter(Exception):
         self.message = message
 
 class LevelMethod:
-    def __init__(self, bounds=10, lambda_=0.29289, epsilon=0.01, max_iter=1000, memory=None, LP_solver="MOSEK", verbose=True):
+    def __init__(
+        self, 
+        bounds=10, 
+        lambda_=0.29289, 
+        epsilon=0.01, 
+        max_iter=1000, 
+        memory=None, 
+        LP_solver="MOSEK", 
+        verbose=True
+    ):
+
         self.bounds = bounds
         self.lambda_ = lambda_
         self.epsilon = epsilon
@@ -33,6 +43,8 @@ class LevelMethod:
         self.x_substar = None
         self.x = None
 
+        # Metrics
+        self.logs = {}
         self.step_times = {
             "step": []
         }
@@ -66,7 +78,7 @@ class LevelMethod:
 
             except LevelMethodException as e:
                 print(type(e).__name__, e.message)
-                return 'optimal'
+                return 'negative gap failure'
             
             except LevelMethodMaxIter as e:
                 print(type(e).__name__, e.message)
@@ -105,7 +117,16 @@ class LevelMethod:
         if self.current_iter > self.max_iter:
             raise LevelMethodMaxIter("Warning: Maximum number of iterations reached.")
 
+        # Logging data
+        self.log('f_upstar', self.f_upstar)
+
         return gap
+
+    def log(self, name, value):
+        if name in self.logs:
+            self.logs[name].append(value)
+        else:
+            self.logs[name] = [value]
 
     @property
     def times(self):

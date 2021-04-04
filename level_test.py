@@ -68,7 +68,7 @@ else:
         model.init_weights()
         for i in range(loops):
             bound = base_bound / (bound_decay ** i)
-            solver = LevelMethod(bounds=1, lambda_=0.2, epsilon=0.01, max_iter=max_iter[i], memory=None, LP_solver=method)
+            solver = LevelMethod(bounds=1, lambda_=0.9, epsilon=0.01, max_iter=max_iter[i], memory=None, LP_solver=method)
             x = model.Weights
             status = solver.solve(f,x)
             model.Weights = solver.x_upstar
