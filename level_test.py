@@ -49,9 +49,9 @@ else:
         loops = 2
         max_iter = [max_iter]*loops
     else:
-        base_bound = 0.5
+        base_bound = 1
         bound_decay = 1
-        max_iter = [200]
+        max_iter = [500]
         loops = len(max_iter)
     print(
         "\nConfiguration:",
@@ -68,7 +68,7 @@ else:
         model.init_weights()
         for i in range(loops):
             bound = base_bound / (bound_decay ** i)
-            solver = LevelMethod(bounds=bound, lambda_=0.5, epsilon=0.01, max_iter=max_iter[i], memory=None, LP_solver=method)
+            solver = LevelMethod(bounds=1, lambda_=0.9, epsilon=0.01, max_iter=max_iter[i], memory=None, LP_solver=method)
             x = model.Weights
             status = solver.solve(f,x)
             model.Weights = solver.x_upstar

@@ -13,13 +13,24 @@ class LevelMethodMaxIter(Exception):
         self.message = message
 
 class LevelMethod:
-    def __init__(self, bounds=10, lambda_=0.29289, epsilon=0.001, max_iter=1000, memory=None, LP_solver="MOSEK"):
+    def __init__(
+        self, 
+        bounds=10, 
+        lambda_=0.29289, 
+        epsilon=0.01, 
+        max_iter=1000, 
+        memory=None, 
+        LP_solver="MOSEK", 
+        verbose=True
+    ):
+
         self.bounds = bounds
         self.lambda_ = lambda_
         self.epsilon = epsilon
         self.max_iter = max_iter
         self.memory = memory
         self.LP_solver = LP_solver
+        self.verbose = verbose
 
         self.function = None
         self.dim = None
@@ -32,11 +43,13 @@ class LevelMethod:
         self.x_substar = None
         self.x = None
 
+        # Metrics
+        self.logs = {}
         self.step_times = {
             "step": []
         }
 
-    def solve(self, function, x, verbose=False):
+    def solve(self, function, x):
         self.function = function
         self.dim = len(x)
         self.x = x
@@ -49,26 +62,31 @@ class LevelMethod:
         self.current_iter = 0
         gap = math.inf
 
-        print(f"Iteration\tf*\t\tModel Min\t\tGap\t\tLevel\t")
+        if self.verbose:
+            print(f"Iteration\tf*\t\tModel Min\t\tGap\t\tLevel\t")
 
         while gap > self.epsilon:
             try:
                 t0 = time.time()
-                gap = self.step(verbose=verbose)
+                gap = self.step()
                 deltat = time.time()-t0
                 self.times["step"].append(deltat)
 
-            except (SolverFailedException, LevelMethodException) as e:
+            except SolverFailedException as e:
                 print(type(e).__name__, e.message)
-                return -1
+                return 'solver failed'
 
+            except LevelMethodException as e:
+                print(type(e).__name__, e.message)
+                return 'negative gap failure'
+            
             except LevelMethodMaxIter as e:
                 print(type(e).__name__, e.message)
-                return 0
+                return 'max iter'
 
-        return 0
+        return 'optimal'
     
-    def step(self, verbose=False):
+    def step(self):
         # Oracle computes f and g
         current_f, current_g = self.function(self.x)
 
@@ -86,7 +104,8 @@ class LevelMethod:
         gap = self.f_upstar - self.f_substar
         level = self.f_substar + self.lambda_ * gap
 
-        print(f"{self.current_iter}\t\t{self.f_upstar:.6f}\t{self.f_substar:.6f}\t\t{gap:.6f}\t{level:.6f}")
+        if self.verbose:
+            print(f"{self.current_iter}\t\t{self.f_upstar:.6f}\t{self.f_substar:.6f}\t\t{gap:.6f}\t{level:.6f}")
 
         if gap < 0:
             raise LevelMethodException(f"Warning: Negative gap {gap}")
@@ -98,9 +117,26 @@ class LevelMethod:
         if self.current_iter > self.max_iter:
             raise LevelMethodMaxIter("Warning: Maximum number of iterations reached.")
 
+        # Logging data
+        self.log('f_upstar', self.f_upstar)
+
         return gap
+
+    def log(self, name, value):
+        if name in self.logs:
+            self.logs[name].append(value)
+        else:
+            self.logs[name] = [value]
 
     @property
     def times(self):
         merged_times = {**self.step_times, **self.model.times}
         return merged_times
+
+    @property
+    def f_value(self):
+        return self.f_upstar
+
+    @property
+    def feval(self):
+        return self.current_iter
