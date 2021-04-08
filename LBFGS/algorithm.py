@@ -57,6 +57,7 @@ class LBFGS:
         self.g = None
         self.f_value = None
         self.f_values = []
+        self.ngs = []
         self.new_x = None
         self.new_g = None
 
@@ -78,7 +79,7 @@ class LBFGS:
 
     def step(self):
         ng = np.linalg.norm(self.g)
-
+        self.ngs.append(ng)
         if self.eps_g is None:
             self.eps_g = self.eps*ng
         if ng <= self.eps_g:
@@ -100,7 +101,6 @@ class LBFGS:
             return "AW line-search could not find a point"
         alpha, new_f_value = AW_result
         self.f_values.append(new_f_value)
-
         ### log infos
         row = []
         row.append(f"{alpha:6.4f}")
@@ -192,7 +192,6 @@ class LBFGS:
 
         # max evals reached
         return None
-
 
 def _log_infos(row):
     string = "{: >15} {: >15} {: >15} {: >15} {: >10}".format(*row)
