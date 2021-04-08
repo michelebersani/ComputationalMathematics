@@ -118,7 +118,7 @@ class LevelMethod:
             raise LevelMethodMaxIter("Warning: Maximum number of iterations reached.")
 
         # Logging data
-        self.log('f_upstar', self.f_upstar)
+        self.log('current_f', current_f)
 
         return gap
 
@@ -140,3 +140,7 @@ class LevelMethod:
     @property
     def feval(self):
         return self.current_iter
+
+    @property
+    def f_values(self):
+        return self.logs['current_f']
