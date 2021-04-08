@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 class adam_SGD:
     def __init__(
         self,
-        alpha: float = 0.01,
+        alpha: float = 0.001,
         beta_1: float = 0.9,
-        beta_2: float = 0.99,
+        beta_2: float = 0.999,
         k: float = 1e-8,
         eps: float = 1e-6,
         max_feval: int = 10000,
