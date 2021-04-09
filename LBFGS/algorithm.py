@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from .Nocedal import NocedalAlgorithm
 from .checks import check_input
 import logging
+import time
 
 class LBFGS:
     def __init__(
@@ -60,6 +61,8 @@ class LBFGS:
         self.ngs = []
         self.new_x = None
         self.new_g = None
+        self.start_time = None
+        self.time_evaluations = []
 
     def solve(self, f, x):
         self.f = f
@@ -73,6 +76,8 @@ class LBFGS:
         row = ["step_size", "f value","delta f_v", "g norm", "f_evals"]
         _log_infos(row)
         ###
+
+        self.start_time = time.process_time()
         while status is None:
             status = self.step()
         return status
@@ -101,6 +106,8 @@ class LBFGS:
             return "AW line-search could not find a point"
         alpha, new_f_value = AW_result
         self.f_values.append(new_f_value)
+        current_time = time.process_time()
+        self.time_evaluations.append(current_time-self.start_time)
         ### log infos
         row = []
         row.append(f"{alpha:6.4f}")
