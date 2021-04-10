@@ -21,6 +21,7 @@ class LevelMethod:
         max_iter=1000, 
         memory=None, 
         LP_solver="MOSEK", 
+        QP_solver="MOSEK",
         verbose=True
     ):
 
@@ -30,6 +31,7 @@ class LevelMethod:
         self.max_iter = max_iter
         self.memory = memory
         self.LP_solver = LP_solver
+        self.QP_solver = QP_solver
         self.verbose = verbose
 
         self.function = None
@@ -55,7 +57,7 @@ class LevelMethod:
         self.x = x
 
         # Build the cutting plane model
-        self.model = CuttingPlaneModel(self.dim, self.bounds, np.ndarray.copy(x), memory=self.memory, LP_solver=self.LP_solver)
+        self.model = CuttingPlaneModel(self.dim, self.bounds, np.ndarray.copy(x), memory=self.memory, LP_solver=self.LP_solver, QP_solver=self.QP_solver)
 
         self.f_upstar = math.inf
         self.x_upstar = None
@@ -94,7 +96,7 @@ class LevelMethod:
         self.model.add_plane(current_f, current_g, self.x)
 
         # Compute f_substar, f_upstar, x_upstar
-        self.x_substar, self.f_substar = self.model.solve()
+        self.x_substar, self.f_substar = self.model.solve_cvxpy()
 
         if self.f_upstar > current_f:
             self.f_upstar = current_f
