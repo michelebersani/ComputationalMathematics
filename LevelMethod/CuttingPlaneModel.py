@@ -12,7 +12,7 @@ class SolverFailedException(Exception):
         self.message = message
 
 class CuttingPlaneModel:
-    def __init__(self, dim, bounds, x0, memory=None, LP_solver="MOSEK", QP_solver="MOSEK"):
+    def __init__(self, dim, bounds, x0, memory=None, LP_solver="mosek", QP_solver="mosek"):
         self.dim = dim
         self.bounds = bounds
         self.coefficients = np.empty((0,dim+1))

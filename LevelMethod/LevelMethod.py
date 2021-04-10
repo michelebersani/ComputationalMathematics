@@ -20,8 +20,8 @@ class LevelMethod:
         epsilon=0.01, 
         max_iter=1000, 
         memory=None, 
-        LP_solver="MOSEK", 
-        QP_solver="MOSEK",
+        LP_solver="mosek", 
+        QP_solver="mosek",
         verbose=True
     ):
 
@@ -96,7 +96,7 @@ class LevelMethod:
         self.model.add_plane(current_f, current_g, self.x)
 
         # Compute f_substar, f_upstar, x_upstar
-        self.x_substar, self.f_substar = self.model.solve_cvxpy()
+        self.x_substar, self.f_substar = self.model.solve()
 
         if self.f_upstar > current_f:
             self.f_upstar = current_f
