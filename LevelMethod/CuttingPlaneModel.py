@@ -12,12 +12,13 @@ class SolverFailedException(Exception):
         self.message = message
 
 class CuttingPlaneModel:
-    def __init__(self, dim, bounds, x0, memory=None, LP_solver="MOSEK"):
+    def __init__(self, dim, bounds, x0, memory=None, LP_solver="mosek", QP_solver="mosek"):
         self.dim = dim
         self.bounds = bounds
         self.coefficients = np.empty((0,dim+1))
         self.x0 = x0
         self.LP_solver = LP_solver
+        self.QP_solver = QP_solver
 
         self.memory = memory
         self.memory_index = 0
@@ -90,7 +91,7 @@ class CuttingPlaneModel:
 
         try:
             t0 = time.time()
-            sol = solvers.lp(c, A, b, solver='mosek')
+            sol = solvers.lp(c, A, b, solver=self.LP_solver)
             self.times["LP"].append(time.time() - t0)
         except Exception as e:
             print(e)
@@ -115,7 +116,7 @@ class CuttingPlaneModel:
 
         try:
             t0 = time.time()
-            sol = solvers.qp(Q, p, A, b, None, None, solver='mosek')
+            sol = solvers.qp(Q, p, A, b, None, None, solver=self.QP_solver)
             self.times["QP"].append(time.time() - t0)
         except Exception as e:
             print(e)
@@ -177,7 +178,7 @@ class CuttingPlaneModel:
             
         try:
             t0 = time.time()
-            prob.solve(verbose=verbose, solver="MOSEK")
+            prob.solve(verbose=verbose, solver=self.QP_solver)
             self.times["QP"].append(time.time() - t0)
         except Exception as e:
             print(e)

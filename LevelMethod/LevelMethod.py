@@ -20,7 +20,8 @@ class LevelMethod:
         epsilon=0.01, 
         max_iter=1000, 
         memory=None, 
-        LP_solver="MOSEK", 
+        LP_solver="mosek", 
+        QP_solver="mosek",
         verbose=True
     ):
 
@@ -30,6 +31,7 @@ class LevelMethod:
         self.max_iter = max_iter
         self.memory = memory
         self.LP_solver = LP_solver
+        self.QP_solver = QP_solver
         self.verbose = verbose
 
         self.function = None
@@ -55,7 +57,7 @@ class LevelMethod:
         self.x = x
 
         # Build the cutting plane model
-        self.model = CuttingPlaneModel(self.dim, self.bounds, np.ndarray.copy(x), memory=self.memory, LP_solver=self.LP_solver)
+        self.model = CuttingPlaneModel(self.dim, self.bounds, np.ndarray.copy(x), memory=self.memory, LP_solver=self.LP_solver, QP_solver=self.QP_solver)
 
         self.f_upstar = math.inf
         self.x_upstar = None
@@ -118,7 +120,7 @@ class LevelMethod:
             raise LevelMethodMaxIter("Warning: Maximum number of iterations reached.")
 
         # Logging data
-        self.log('f_upstar', self.f_upstar)
+        self.log('current_f', current_f)
 
         return gap
 
@@ -140,3 +142,7 @@ class LevelMethod:
     @property
     def feval(self):
         return self.current_iter
+
+    @property
+    def f_values(self):
+        return self.logs['current_f']
