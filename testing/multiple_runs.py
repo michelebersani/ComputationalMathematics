@@ -70,11 +70,11 @@ def _multi_run_local(solver, f, n=10):
         delta_s = time.process_time() - start_time
         seconds.append(delta_s)
 
-        if solver_out != "optimal":
-            n_failures += 1
-        else:
-            final_fv.append(solver.f_value)
-            f_evals.append(solver.feval)
+        # if solver_out != "optimal":
+        #     n_failures += 1
+        # else:
+        final_fv.append(solver.f_value)
+        f_evals.append(solver.feval)
 
 
     final_fv = np.array(final_fv)

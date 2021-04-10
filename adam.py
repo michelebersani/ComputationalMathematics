@@ -1,5 +1,6 @@
 import numpy as np
 import logging
+import time
 import matplotlib.pyplot as plt
 
 class adam_SGD:
@@ -28,7 +29,8 @@ class adam_SGD:
         self.f_value = None
         self.plot = plot
         self.verbose = verbose
-    
+        self.start_time = None
+        self.time_evaluations = []
 
 
     def plot_fvalues(self):
@@ -47,6 +49,7 @@ class adam_SGD:
         m_t = np.zeros_like(x)
         v_t = np.zeros_like(x)
         self.f_value, self.g = f(x)
+        self.start_time = time.process_time()
         ng = np.linalg.norm(self.g)
         ng0 = ng
         
@@ -57,6 +60,8 @@ class adam_SGD:
             self.feval += 1
             new_f_value, self.g = f(x)
             self.f_values.append(new_f_value)
+            current_time = time.process_time()
+            self.time_evaluations.append(current_time-self.start_time)
             m_t = self.beta_1 * m_t + (1-self.beta_1)*self.g
             v_t = self.beta_2 * v_t + (1-self.beta_2)*np.multiply(self.g,self.g)
             m_hat = m_t/(1-self.beta_1**(self.feval+1))
