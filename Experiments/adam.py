@@ -76,10 +76,7 @@ class adam_SGD:
             row.append(f"{self.feval}")
             _log_infos(row)
             ###
-            #STOPPING CRITERIA
-            if ng <= self.eps * ng0:
-                status = "optimal"
-                break
+            
             if self.feval > self.max_feval:
                 status = "optimal"
                 #status = "stopped for reached max_feval"
