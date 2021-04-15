@@ -1,7 +1,11 @@
-from LBFGS import LBFGS_2D, LBFGS
 import testing_functions.ackley
 import logging
 import numpy as np
+
+import sys
+sys.path.insert(1, '../')
+
+from LBFGS import LBFGS_2D, LBFGS
 
 if __name__ == '__main__':
     # set level to WARNING to avoid printing INFOs
