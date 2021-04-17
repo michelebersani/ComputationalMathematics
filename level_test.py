@@ -4,9 +4,6 @@ import logging
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 
-import sys
-sys.path.insert(1, '../')
-
 from config import shuffled_csv
 from NN import NN_model, ReLU, Sigmoid, MSE, L1_reg, L2_reg
 from NN.utility import batch_train, batch_out, Model_Wrapper
