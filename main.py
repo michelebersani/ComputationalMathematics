@@ -1,4 +1,4 @@
-import testing_functions.ackley
+from testing_functions import ackley
 import logging
 import numpy as np
 from LBFGS import LBFGS_2D, LBFGS
@@ -8,7 +8,7 @@ if __name__ == '__main__':
     logging.basicConfig(level='INFO')
 
     solver = LBFGS()
-    status = solver.solve(testing_functions.ackley, [2,3.1])
+    status = solver.solve(ackley.function, [2,3.1])
     print('')
     print(f'Exited with status: {status}')
     print(f"Minimum function value found is: {solver.f_value}")
@@ -16,4 +16,5 @@ if __name__ == '__main__':
     print(f"Last gradient was: {solver.g}")
     print('')
 
-    LBFGS_2D(testing_functions.ackley, [2,3.1])
+    # Ackley function optimization with fancy plotting
+    LBFGS_2D(ackley, [2,3.1])
