@@ -1,3 +1,5 @@
+[**Read the pdf document here.**](./docs/Computational_Mathematics.pdf)
+
 ![](/docs/report_images/Computational_Mathematics-1.jpg)
 ![](/docs/report_images/Computational_Mathematics-2.jpg)
 ![](/docs/report_images/Computational_Mathematics-3.jpg)
